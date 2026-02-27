@@ -19,7 +19,7 @@ StaticJsonDocument<1024> jsonInfoHttp;
 #include <math.h>
 #include "ICM_20948.h"
 
-// functions for barrery info.
+// functions for battery info.
 #include "battery_ctrl.h"
 
 // config for ugv.

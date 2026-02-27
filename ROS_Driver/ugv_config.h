@@ -17,8 +17,8 @@ byte espNowMode = 3;
 
 // set the broadcast ctrl mode.
 // broadcast mac address: FF:FF:FF:FF:FF:FF.
-// true  - [default]it can be controled by broadcast mac address.
-// false - it won't be controled by broadcast mac address.
+// true  - [default]it can be controlled by broadcast mac address.
+// false - it won't be controlled by broadcast mac address.
 bool ctrlByBroadcast = true;
 
 // you can define some whitelist mac addresses here.
@@ -48,7 +48,7 @@ bool steadyMode = false;
 
 // 0: turn off base info feedback flow.
 // 1: [default] turn on base info feedback flow.
-bool baseFeedbackFlow = 1;
+bool baseFeedbackFlow = 0;
 
 String thisMacStr;
 

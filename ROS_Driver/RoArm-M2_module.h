@@ -276,7 +276,7 @@ int RoArmM2_baseJointCtrlRad(byte returnType, double radInput, u16 speedInput, u
 }
 
 
-// use this function to compute the servo position to ctrl shoudlder joint.
+// use this function to compute the servo position to ctrl shoulder joint.
 // returnType 0: only returns the shoulder joint servo position and save it to goalPos[1] and goalPos[2],
 //               servo will NOT move.
 //            1: returns the shoulder joint servo position and save it to goalPos[1] and goalPos[2],
@@ -300,6 +300,8 @@ int RoArmM2_shoulderJointCtrlRad(byte returnType, double radInput, u16 speedInpu
   else if(returnType == SHOULDER_DRIVEN_SERVO_ID){
     return goalPos[2];
   }
+  // TODO(michel): missing return value when returnType == 1, fix compiler error by adding a return statement here.
+  return 0;
 }
 
 
@@ -781,6 +783,8 @@ double maxNumInArray(){
     }
     return maxVal;
   }
+  // TODO(michel): missing return value, fix compiler error by adding a return statement here.
+  return 0.0;
 }
 
 
