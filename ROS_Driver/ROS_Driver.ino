@@ -61,8 +61,10 @@ StaticJsonDocument<1024> jsonInfoHttp;
 // functions for uart json ctrl.
 #include "uart_ctrl.h"
 
+#if ENABLE_HTTP_SERVER
 // functions for http & web server.
 #include "http_server.h"
+#endif
 
 void moduleType_RoArmM2() {
   unsigned long curr_time = millis();
@@ -270,12 +272,14 @@ void setup() {
   }
   initWifi();
 
+#if ENABLE_HTTP_SERVER
   screenLine_1 = "http & web";
   oled_update();
-  if (InfoPrint == 1) { 
+  if (InfoPrint == 1) {
     Serial.println("http & web init.");
   }
   initHttpWebServer();
+#endif
 
   screenLine_1 = "ESP-NOW";
   oled_update();
@@ -370,7 +374,10 @@ void loop() {
   }
 
   serialCtrl();
+
+#if ENABLE_HTTP_SERVER
   server.handleClient();
+#endif
 
   // read and compute the info of joints.
   switch (moduleType) {

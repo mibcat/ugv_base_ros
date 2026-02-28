@@ -42,6 +42,12 @@ These [libraries](libs.md) are needed to build the project successfully. See [pl
 
 Simply run the **PlatformIO:Build** task.
 
+#### Build options
+
+| build flag         | default | description                          | flash size |
+| ------------------ | ------- | ------------------------------------ | ---------- |
+| ENABLE_HTTP_SERVER | 0       | use http server to control the robot | 92.5 kB    |
+
 ### Upload firmware to target
 
 Connect develop machine to the Rover via USB-C cable (marked with USB on the board) - than run the **PlatformIO:Upload** task.
