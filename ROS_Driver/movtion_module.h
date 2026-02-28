@@ -6,7 +6,7 @@ float spd_rate_A = 1.0;
 float spd_rate_B = 1.0;
 bool heartbeatStopFlag = false;
 
-void movtionPinInit(){
+void movtionPinInit() {
   pinMode(AIN1, OUTPUT);
   pinMode(AIN2, OUTPUT);
   pinMode(PWMA, OUTPUT);
@@ -23,8 +23,7 @@ void movtionPinInit(){
   digitalWrite(BIN2, LOW);
 }
 
-
-void switchEmergencyStop(){
+void switchEmergencyStop() {
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, LOW);
 
@@ -32,62 +31,55 @@ void switchEmergencyStop(){
   digitalWrite(BIN2, LOW);
 }
 
-
-void switchPortCtrlA(float pwmInputA){
+void switchPortCtrlA(float pwmInputA) {
   int pwmIntA = round(pwmInputA * spd_rate_A);
-  if(abs(pwmIntA) < 1e-6){
+  if (abs(pwmIntA) < 1e-6) {
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, LOW);
     return;
   }
 
-  if(pwmIntA > 0){
+  if (pwmIntA > 0) {
     digitalWrite(AIN1, LOW);
     digitalWrite(AIN2, HIGH);
     ledcWrite(PWMA, pwmIntA);
-  }
-  else{
+  } else {
     digitalWrite(AIN1, HIGH);
     digitalWrite(AIN2, LOW);
-    ledcWrite(PWMA,-pwmIntA);
+    ledcWrite(PWMA, -pwmIntA);
   }
 }
 
-
-void switchPortCtrlB(float pwmInputB){
+void switchPortCtrlB(float pwmInputB) {
   int pwmIntB = round(pwmInputB * spd_rate_B);
-  if(abs(pwmIntB) < 1e-6){
+  if (abs(pwmIntB) < 1e-6) {
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, LOW);
     return;
   }
 
-  if(pwmIntB > 0){
+  if (pwmIntB > 0) {
     digitalWrite(BIN1, LOW);
     digitalWrite(BIN2, HIGH);
     ledcWrite(PWMB, pwmIntB);
-  }
-  else{
+  } else {
     digitalWrite(BIN1, HIGH);
     digitalWrite(BIN2, LOW);
-    ledcWrite(PWMB,-pwmIntB);
+    ledcWrite(PWMB, -pwmIntB);
   }
 }
 
-
 void switchCtrl(int pwmIntA, int pwmIntB) {
-    switch_pwm_A = pwmIntA;
-    switch_pwm_B = pwmIntB;
-    switchPortCtrlA(switch_pwm_A);
-    switchPortCtrlB(switch_pwm_B);
+  switch_pwm_A = pwmIntA;
+  switch_pwm_B = pwmIntB;
+  switchPortCtrlA(switch_pwm_A);
+  switchPortCtrlB(switch_pwm_B);
 }
-
 
 void lightCtrl(int pwmIn) {
   switch_pwm_A = pwmIn;
   switchPortCtrlA(-abs(switch_pwm_A));
 }
-
 
 void setSpdRate(float inputL, float inputR) {
   inputL = abs(inputL);
@@ -102,7 +94,6 @@ void setSpdRate(float inputL, float inputR) {
   spd_rate_B = inputR;
 }
 
-
 void getSpdRate() {
   jsonInfoHttp.clear();
   jsonInfoHttp["T"] = CMD_GET_SPD_RATE;
@@ -114,8 +105,6 @@ void getSpdRate() {
   serializeJson(jsonInfoHttp, getInfoJsonString);
   Serial.println(getInfoJsonString);
 }
-
-
 
 // movtion parts.
 // A-left, B-right
@@ -134,7 +123,6 @@ double speedGetB;
 
 double plusesRate = 3.14159265359 * WHEEL_D / ONE_CIRCLE_PLUSES;
 
-
 void initEncoders() {
   encoderA.attachHalfQuad(AENCA, AENCB);
   encoderB.attachHalfQuad(BENCA, BENCB);
@@ -146,11 +134,15 @@ void getLeftSpeed() {
   unsigned long currentTime = micros();
   long encoderPulsesA = encoderA.getCount();
   if (!SET_MOTOR_DIR) {
-    speedGetA = (plusesRate * (encoderPulsesA - lastEncoderA)) / ((double)(currentTime - lastLeftSpdTime) / 1000000);
-    en_odom_l = ((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
+    speedGetA = (plusesRate * (encoderPulsesA - lastEncoderA)) /
+                ((double)(currentTime - lastLeftSpdTime) / 1000000);
+    en_odom_l =
+        ((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   } else {
-    speedGetA = (plusesRate * (lastEncoderA - encoderPulsesA)) / ((double)(currentTime - lastLeftSpdTime) / 1000000);
-    en_odom_l = - ((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
+    speedGetA = (plusesRate * (lastEncoderA - encoderPulsesA)) /
+                ((double)(currentTime - lastLeftSpdTime) / 1000000);
+    en_odom_l =
+        -((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   }
   lastEncoderA = encoderPulsesA;
   lastLeftSpdTime = currentTime;
@@ -160,17 +152,19 @@ void getRightSpeed() {
   unsigned long currentTime = micros();
   long encoderPulsesB = encoderB.getCount();
   if (!SET_MOTOR_DIR) {
-    speedGetB = (plusesRate * (encoderPulsesB - lastEncoderB)) / ((double)(currentTime - lastRightSpdTime) / 1000000);
-    en_odom_r = ((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
+    speedGetB = (plusesRate * (encoderPulsesB - lastEncoderB)) /
+                ((double)(currentTime - lastRightSpdTime) / 1000000);
+    en_odom_r =
+        ((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   } else {
-    speedGetB = (plusesRate * (lastEncoderB - encoderPulsesB)) / ((double)(currentTime - lastRightSpdTime) / 1000000);
-    en_odom_r = - ((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
+    speedGetB = (plusesRate * (lastEncoderB - encoderPulsesB)) /
+                ((double)(currentTime - lastRightSpdTime) / 1000000);
+    en_odom_r =
+        -((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   }
   lastEncoderB = encoderPulsesB;
   lastRightSpdTime = currentTime;
 }
-
-
 
 // --- PID Controller ---
 
@@ -193,39 +187,33 @@ float change_offset = 0.005;
 bool new_setpoint_flag = false;
 
 void pidControllerInit() {
-  pidA.Start(speedGetA,
-             outputA,
-             setpointA);
+  pidA.Start(speedGetA, outputA, setpointA);
   pidA.SetOutputLimits(-255, 255);
   pidA.SetMode(PID::Automatic);
 
-  pidB.Start(speedGetB,
-             outputB,
-             setpointB);
+  pidB.Start(speedGetB, outputB, setpointB);
   pidB.SetOutputLimits(-255, 255);
   pidB.SetMode(PID::Automatic);
 }
 
-void leftCtrl(float pwmInputA){
+void leftCtrl(float pwmInputA) {
   int pwmIntA = round(pwmInputA);
-  if(SET_MOTOR_DIR){
-    if(pwmIntA < 0){
+  if (SET_MOTOR_DIR) {
+    if (pwmIntA < 0) {
       digitalWrite(AIN1, HIGH);
       digitalWrite(AIN2, LOW);
       ledcWrite(PWMA, abs(pwmIntA));
-    }
-    else{
+    } else {
       digitalWrite(AIN1, LOW);
       digitalWrite(AIN2, HIGH);
       ledcWrite(PWMA, abs(pwmIntA));
     }
-  }else{
-    if(pwmIntA < 0){
+  } else {
+    if (pwmIntA < 0) {
       digitalWrite(AIN1, LOW);
       digitalWrite(AIN2, HIGH);
       ledcWrite(PWMA, abs(pwmIntA));
-    }
-    else{
+    } else {
       digitalWrite(AIN1, HIGH);
       digitalWrite(AIN2, LOW);
       ledcWrite(PWMA, abs(pwmIntA));
@@ -233,26 +221,24 @@ void leftCtrl(float pwmInputA){
   }
 }
 
-void rightCtrl(float pwmInputB){
+void rightCtrl(float pwmInputB) {
   int pwmIntB = round(pwmInputB);
-  if(SET_MOTOR_DIR){
-    if(pwmIntB < 0){
+  if (SET_MOTOR_DIR) {
+    if (pwmIntB < 0) {
       digitalWrite(BIN1, HIGH);
       digitalWrite(BIN2, LOW);
       ledcWrite(PWMB, abs(pwmIntB));
-    }
-    else{
+    } else {
       digitalWrite(BIN1, LOW);
       digitalWrite(BIN2, HIGH);
       ledcWrite(PWMB, abs(pwmIntB));
     }
-  }else{
-    if(pwmIntB < 0){
+  } else {
+    if (pwmIntB < 0) {
       digitalWrite(BIN1, LOW);
       digitalWrite(BIN2, HIGH);
       ledcWrite(PWMB, abs(pwmIntB));
-    }
-    else{
+    } else {
       digitalWrite(BIN1, HIGH);
       digitalWrite(BIN2, LOW);
       ledcWrite(PWMB, abs(pwmIntB));
@@ -263,22 +249,22 @@ void rightCtrl(float pwmInputB){
 void setGoalSpeed(float inputLeft, float inputRight) {
   usePIDCompute = true;
 
-  if(inputLeft < -2.0 || inputLeft > 2.0){
+  if (inputLeft < -2.0 || inputLeft > 2.0) {
     return;
   }
 
-  if(inputRight < -2.0 || inputRight > 2.0){
+  if (inputRight < -2.0 || inputRight > 2.0) {
     return;
   }
-  
-  setpointA = inputLeft*spd_rate_A;
-  setpointB = inputRight*spd_rate_B;
+
+  setpointA = inputLeft * spd_rate_A;
+  setpointB = inputRight * spd_rate_B;
 
   if (setpointA != setpointA_buffer) {
     pidA.Setpoint(setpointA);
     setpointA_buffer = inputLeft;
   }
-  
+
   if (setpointB != setpointB_buffer) {
     pidB.Setpoint(setpointB);
     setpointB_buffer = inputRight;
@@ -291,7 +277,7 @@ void LeftPidControllerCompute() {
   }
 
   outputA = pidA.Run(speedGetA);
-  if (abs(outputA)<THRESHOLD_PWM) {
+  if (abs(outputA) < THRESHOLD_PWM) {
     outputA = 0;
   }
   if (setpointA == 0 && speedGetA == 0) {
@@ -306,7 +292,7 @@ void RightPidControllerCompute() {
   }
 
   outputB = pidB.Run(speedGetB);
-  if (abs(outputB)<THRESHOLD_PWM) {
+  if (abs(outputB) < THRESHOLD_PWM) {
     outputB = 0;
   }
   if (setpointB == 0 && speedGetB == 0) {
@@ -339,14 +325,12 @@ void heartBeatCtrl() {
   }
 }
 
-void changeHeartBeatDelay(int inputCmd) {
-  HEART_BEAT_DELAY = inputCmd;
-}
+void changeHeartBeatDelay(int inputCmd) { HEART_BEAT_DELAY = inputCmd; }
 
 void mm_settings(byte inputMain, byte inputModule) {
   mainType = inputMain;
   moduleType = inputModule;
-  
+
   // mainType:01 RaspRover
   // #define WHEEL_D 0.0800
   // #define ONE_CIRCLE_PLUSES  2100
@@ -389,7 +373,7 @@ void mm_settings(byte inputMain, byte inputModule) {
     screenLine_2 = "UGV Rover";
   } else if (mainType == 3) {
     screenLine_2 = "UGV Beast";
-  } 
+  }
 
   if (moduleType == 0) {
     screenLine_2 += " Null";
@@ -397,5 +381,5 @@ void mm_settings(byte inputMain, byte inputModule) {
     screenLine_2 += " Arm";
   } else if (moduleType == 2) {
     screenLine_2 += " PT";
-  } 
+  }
 }

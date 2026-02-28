@@ -1,4 +1,4 @@
-void led_pin_init(){
+void led_pin_init() {
   ledcAttach(IO4_PIN, FREQ, ANALOG_WRITE_BITS);
   ledcAttach(IO5_PIN, FREQ, ANALOG_WRITE_BITS);
 }

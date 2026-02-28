@@ -2,7 +2,7 @@ u8 gimbalID[2] = {GIMBAL_PAN_ID, GIMBAL_TILT_ID};
 
 s16 gimbalPos[2];
 u16 gimbalSpd[2];
-u8  gimbalAcc[2];
+u8 gimbalAcc[2];
 
 ServoFeedback gimbalFeedback[2];
 // [0] PAN
@@ -19,11 +19,13 @@ float constrainFloat(float value, float min, float max) {
   return value;
 }
 
-float mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
+float mapFloat(float value, float fromLow, float fromHigh, float toLow,
+               float toHigh) {
   return (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
 }
 
-void gimbalCtrlSimple(float Xinput, float Yinput, float spdInput, float accInput) {
+void gimbalCtrlSimple(float Xinput, float Yinput, float spdInput,
+                      float accInput) {
   Xinput = constrainFloat(Xinput, -180, 180);
   Yinput = constrainFloat(Yinput, -30, 90);
 
@@ -39,7 +41,8 @@ void gimbalCtrlSimple(float Xinput, float Yinput, float spdInput, float accInput
   st.SyncWritePosEx(gimbalID, 2, gimbalPos, gimbalSpd, gimbalAcc);
 }
 
-void gimbalCtrlMove(float Xinput, float Yinput, float spdInputX, float spdInputY) {
+void gimbalCtrlMove(float Xinput, float Yinput, float spdInputX,
+                    float spdInputY) {
   Xinput = constrainFloat(Xinput, -180, 180);
   Yinput = constrainFloat(Yinput, -30, 90);
 
@@ -58,8 +61,8 @@ void gimbalCtrlMove(float Xinput, float Yinput, float spdInputX, float spdInputY
   st.SyncWritePosEx(gimbalID, 2, gimbalPos, gimbalSpd, gimbalAcc);
 }
 
-
-//mapFloat(float value, float fromLow, float fromHigh, float toLow, float toHigh)
+// mapFloat(float value, float fromLow, float fromHigh, float toLow, float
+// toHigh)
 float panAngleCompute(int inputPos) {
   return mapFloat((inputPos - 2047), 0, 4095, 0, 360);
 }
@@ -77,7 +80,7 @@ void gimbalCtrlStop() {
 }
 
 void getGimbalFeedback() {
-  if(st.FeedBack(GIMBAL_PAN_ID)!=-1) {
+  if (st.FeedBack(GIMBAL_PAN_ID) != -1) {
     gimbalFeedback[0].status = true;
     gimbalFeedback[0].pos = st.ReadPos(-1);
     gimbalFeedback[0].speed = st.ReadSpeed(-1);
@@ -86,9 +89,9 @@ void getGimbalFeedback() {
     gimbalFeedback[0].current = st.ReadCurrent(-1);
     gimbalFeedback[0].temper = st.ReadTemper(-1);
     gimbalFeedback[0].mode = st.ReadMode(GIMBAL_PAN_ID);
-  } else{
+  } else {
     servoFeedback[0].status = false;
-    if(InfoPrint == 1){
+    if (InfoPrint == 1) {
       jsonInfoHttp.clear();
       jsonInfoHttp["T"] = 1005;
       jsonInfoHttp["id"] = GIMBAL_PAN_ID;
@@ -99,7 +102,7 @@ void getGimbalFeedback() {
     }
   }
 
-  if(st.FeedBack(GIMBAL_TILT_ID)!=-1) {
+  if (st.FeedBack(GIMBAL_TILT_ID) != -1) {
     gimbalFeedback[1].status = true;
     gimbalFeedback[1].pos = st.ReadPos(-1);
     gimbalFeedback[1].speed = st.ReadSpeed(-1);
@@ -108,9 +111,9 @@ void getGimbalFeedback() {
     gimbalFeedback[1].current = st.ReadCurrent(-1);
     gimbalFeedback[1].temper = st.ReadTemper(-1);
     gimbalFeedback[1].mode = st.ReadMode(GIMBAL_TILT_ID);
-  } else{
+  } else {
     servoFeedback[1].status = false;
-    if(InfoPrint == 1){
+    if (InfoPrint == 1) {
       jsonInfoHttp.clear();
       jsonInfoHttp["T"] = 1005;
       jsonInfoHttp["id"] = GIMBAL_TILT_ID;
@@ -132,7 +135,6 @@ void gimbalSteadySet(bool inputCmd, float inputY) {
   steadyGoalY = inputY;
 }
 
-
 void gimbalSteady(float inputBiasY) {
   if (!steadyMode) {
     return;
@@ -140,53 +142,44 @@ void gimbalSteady(float inputBiasY) {
   gimbalCtrlSimple(0, inputBiasY - icm_pitch, 0, 0);
 }
 
-
 void gimbalUserCtrl(int inputX, int inputY, int inputSpd) {
   static float goalX = 0;
   static float goalY = 0;
 
-  if(inputX == -1 && inputY == 1){
+  if (inputX == -1 && inputY == 1) {
     goalX = -180;
     goalY = 90;
-  }
-  else if(inputX == 0 && inputY == 1){
+  } else if (inputX == 0 && inputY == 1) {
     goalY = 90;
-  }
-  else if(inputX == 1 && inputY == 1){
+  } else if (inputX == 1 && inputY == 1) {
     goalX = 180;
     goalY = 90;
-  }
-  else if(inputX == -1 && inputY == 0){
+  } else if (inputX == -1 && inputY == 0) {
     goalX = -180;
-  }
-  else if(inputX == 1 && inputY == 0){
+  } else if (inputX == 1 && inputY == 0) {
     goalX = 180;
-  }
-  else if(inputX == -1 && inputY == -1){
+  } else if (inputX == -1 && inputY == -1) {
     goalX = -180;
     goalY = -45;
-  }
-  else if(inputX == 0 && inputY == -1){
+  } else if (inputX == 0 && inputY == -1) {
     goalY = -45;
-  }
-  else if(inputX == 1 && inputY == -1){
+  } else if (inputX == 1 && inputY == -1) {
     goalX = 180;
     goalY = -45;
   }
 
-  if(inputX == 2 && inputY == 2){
+  if (inputX == 2 && inputY == 2) {
     gimbalCtrlSimple(0, 0, 0, 10);
-  }
-  else{
+  } else {
     gimbalCtrlSimple(goalX, goalY, inputSpd, 0);
-    if(inputX == 0){
+    if (inputX == 0) {
       servoTorqueCtrl(GIMBAL_PAN_ID, 0);
       delay(5);
       servoTorqueCtrl(GIMBAL_PAN_ID, 1);
       getGimbalFeedback();
       goalX = panAngleCompute(gimbalFeedback[0].pos);
     }
-    if(inputY == 0){
+    if (inputY == 0) {
       servoTorqueCtrl(GIMBAL_TILT_ID, 0);
       delay(5);
       servoTorqueCtrl(GIMBAL_TILT_ID, 1);
@@ -194,5 +187,4 @@ void gimbalUserCtrl(int inputX, int inputY, int inputSpd) {
       goalY = tiltAngleCompute(gimbalFeedback[1].pos);
     }
   }
-
 }
