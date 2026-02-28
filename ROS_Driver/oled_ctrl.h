@@ -8,14 +8,10 @@ unsigned long lastTimeMillis = millis();
 // default
 String screenLine_0;
 String screenLine_1;
-String screenLine_2;
-String screenLine_3;
 
 // custom
 String customLine_0;
 String customLine_1;
-String customLine_2;
-String customLine_3;
 
 // #include <Adafruit_SSD1306.h>
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -31,7 +27,8 @@ void init_oled() {
     Serial.println(F("SSD1306 allocation failed"));
   }
   display.clearDisplay();
-  display.setTextSize(1);
+  // use larger text so we only have 2 lines on a 32px-high display
+  display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
   display.display();
@@ -42,10 +39,9 @@ void oled_update() {
   display.clearDisplay();
   display.setCursor(0, 0);
 
+  // print two larger lines (font height x2 -> ~16px per line on default font)
   display.println(screenLine_0);
   display.println(screenLine_1);
-  display.println(screenLine_2);
-  display.println(screenLine_3);
 
   display.display();
 }
@@ -62,9 +58,9 @@ void oledInfoUpdate() {
   if (!screenDefaultMode) {
     return;
   }
-
-  screenLine_3 = "V:" + String(loadVoltage_V) + " s " + String(mainType) +
-                 String(moduleType);
+  // output voltage/current in V and A
+  screenLine_1 =
+      String(loadVoltage_V, 1) + "/" + String(current_mA / 1000.0, 1);
   oled_update();
 }
 
@@ -78,20 +74,13 @@ void oledCtrl(byte inputLineNum, String inputMegs) {
     case 1:
       customLine_1 = inputMegs;
       break;
-    case 2:
-      customLine_2 = inputMegs;
-      break;
-    case 3:
-      customLine_3 = inputMegs;
-      break;
   }
   display.clearDisplay();
   display.setCursor(0, 0);
 
+  // show only two custom lines with larger text
   display.println(customLine_0);
   display.println(customLine_1);
-  display.println(customLine_2);
-  display.println(customLine_3);
 
   display.display();
 }
@@ -99,8 +88,7 @@ void oledCtrl(byte inputLineNum, String inputMegs) {
 // set oled as default.
 void setOledDefault() {
   screenDefaultMode = true;
-  inaDataUpdate();
-  screenLine_3 = "V:" + String(loadVoltage_V);
-  oled_update();
-  lastTimeMillis = currentTimeMillis;
+  // force update
+  lastTimeMillis = 0;
+  oledInfoUpdate();
 }

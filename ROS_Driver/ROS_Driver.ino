@@ -186,10 +186,8 @@ void setup() {
   mm_settings(mainType, moduleType);
 
   init_oled();
-  screenLine_0 = "ugv_base_ros.git";
-  screenLine_1 = "version: 0.96";
-  screenLine_2 = "starting...";
-  screenLine_3 = "";
+  screenLine_0 = "0.96mibcat";
+  screenLine_1 = "booting...";
   oled_update();
 
   delay(1200);
@@ -201,8 +199,7 @@ void setup() {
   led_pin_init();
 
   // init the littleFS funcs in files_ctrl.h
-  screenLine_2 = screenLine_3;
-  screenLine_3 = "Initialize LittleFS";
+  screenLine_1 = "LittleFS";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("Initialize LittleFS for Flash files ctrl.");
@@ -210,8 +207,7 @@ void setup() {
   initFS();
 
   // init the funcs in switch_module.h
-  screenLine_2 = screenLine_3;
-  screenLine_3 = "Initialize 12V-switch ctrl";
+  screenLine_1 = "12V-sw ctl";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("Initialize the pins used for 12V-switch ctrl.");
@@ -219,8 +215,7 @@ void setup() {
   movtionPinInit();
 
   // servos power up
-  screenLine_2 = screenLine_3;
-  screenLine_3 = "Power up the servos";
+  screenLine_1 = "Pwr servos";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("Power up the servos.");
@@ -228,8 +223,7 @@ void setup() {
   delay(500);
 
   // init servo ctrl functions.
-  screenLine_2 = screenLine_3;
-  screenLine_3 = "ServoCtrl init UART2TTL...";
+  screenLine_1 = "servo ctrl";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("ServoCtrl init UART2TTL...");
@@ -237,8 +231,7 @@ void setup() {
   RoArmM2_servoInit();
 
   // check the status of the servos.
-  screenLine_2 = screenLine_3;
-  screenLine_3 = "Bus servos status check...";
+  screenLine_1 = "servo stat";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("Bus servos status check...");
@@ -249,20 +242,20 @@ void setup() {
     Serial.println("All bus servos status checked.");
   }
   if (RoArmM2_initCheckSucceed) {
-    screenLine_2 = "Bus servos: succeed";
+    screenLine_1 = "servo ok";
   } else {
-    screenLine_2 = "Bus servos: " + servoFeedback[BASE_SERVO_ID - 11].status +
+    screenLine_1 = "servo:" + servoFeedback[BASE_SERVO_ID - 11].status +
                    servoFeedback[SHOULDER_DRIVING_SERVO_ID - 11].status +
                    servoFeedback[SHOULDER_DRIVEN_SERVO_ID - 11].status +
                    servoFeedback[ELBOW_SERVO_ID - 11].status +
                    servoFeedback[GRIPPER_SERVO_ID - 11].status;
   }
-  screenLine_3 = ">>> Moving to init pos...";
+  screenLine_1 = "mov to ini";
   oled_update();
   RoArmM2_resetPID();
   RoArmM2_moveInit();
 
-  screenLine_3 = "Reset joint torque to ST_TORQUE_MAX";
+  screenLine_1 = "res torque";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("Reset joint torque to ST_TORQUE_MAX.");
@@ -270,35 +263,35 @@ void setup() {
   RoArmM2_dynamicAdaptation(0, ST_TORQUE_MAX, ST_TORQUE_MAX, ST_TORQUE_MAX,
                             ST_TORQUE_MAX);
 
-  screenLine_3 = "WiFi init";
+  screenLine_1 = "WiFi";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("WiFi init.");
   }
   initWifi();
 
-  screenLine_3 = "http & web init";
+  screenLine_1 = "http & web";
   oled_update();
-  if (InfoPrint == 1) {
+  if (InfoPrint == 1) { 
     Serial.println("http & web init.");
   }
   initHttpWebServer();
 
-  screenLine_3 = "ESP-NOW init";
+  screenLine_1 = "ESP-NOW";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("ESP-NOW init.");
   }
   initEspNow();
 
-  screenLine_3 = "IMU Calibrating";
+  screenLine_1 = "IMU cal";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("IMU Calibrating");
   }
   imuCalibration();
 
-  screenLine_3 = "UGV started";
+  screenLine_0 = "UGV ready";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("UGV started.");
@@ -306,14 +299,9 @@ void setup() {
 
   getThisDevMacAddress();
 
-  updateOledWifiInfo();
-
   initEncoders();
 
   pidControllerInit();
-
-  screenLine_2 = String("MAC:") + macToString(thisDevMac);
-  oled_update();
 
   led_pwm_ctrl(0, 0);
 

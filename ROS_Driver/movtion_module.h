@@ -368,18 +368,18 @@ void mm_settings(byte inputMain, byte inputModule) {
   plusesRate = 3.14159265359 * WHEEL_D / ONE_CIRCLE_PLUSES;
 
   if (mainType == 1) {
-    screenLine_2 = "RaspRover";
+    screenLine_1 = "Rasp";
   } else if (mainType == 2) {
-    screenLine_2 = "UGV Rover";
+    screenLine_1 = "Rover";
   } else if (mainType == 3) {
-    screenLine_2 = "UGV Beast";
+    screenLine_1 = "Beast";
   }
 
   if (moduleType == 0) {
-    screenLine_2 += " Null";
+    screenLine_1 += " Null";
   } else if (moduleType == 1) {
-    screenLine_2 += " Arm";
+    screenLine_1 += " Arm";
   } else if (moduleType == 2) {
-    screenLine_2 += " PT";
+    screenLine_1 += " PT";
   }
 }

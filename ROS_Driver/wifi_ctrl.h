@@ -40,29 +40,6 @@ IPAddress localIP;
 DynamicJsonDocument wifiDoc(256);
 bool wifiConfigFound = false;
 
-// update oled accroding to wifi settings.
-void updateOledWifiInfo() {
-  switch (WIFI_CURRENT_MODE) {
-    case 0:
-      screenLine_0 = "AP: OFF";
-      screenLine_1 = "ST: OFF";
-      break;
-    case 1:
-      screenLine_0 = String("AP:") + ap_ssid;
-      screenLine_1 = "ST: OFF";
-      break;
-    case 2:
-      screenLine_0 = "AP: OFF";
-      screenLine_1 = String("ST:") + localIP.toString();
-      break;
-    case 3:
-      screenLine_0 = String("AP:") + ap_ssid;
-      screenLine_1 = String("ST:") + localIP.toString();
-      break;
-  }
-  oled_update();
-}
-
 // load the wifiConfig.json form Flash.
 // the file name is wifiConfig.json in root path.
 bool loadWifiConfig() {
@@ -181,8 +158,6 @@ bool wifiModeAP(const char* input_ssid, const char* input_password) {
   ap_ssid = input_ssid;
   ap_password = input_password;
 
-  updateOledWifiInfo();
-
   jsonInfoHttp.clear();
   jsonInfoHttp["info"] = "AP mode starts";
   jsonInfoHttp["ap_ssid"] = ap_ssid;
@@ -220,7 +195,6 @@ bool wifiModeSTA(const char* input_ssid, const char* input_password) {
         Serial.println("STA connection timeout.");
       }
       wifiModeAP(ap_ssid, ap_password);
-      updateOledWifiInfo();
 
       jsonInfoHttp.clear();
       jsonInfoHttp["info"] = "STA connection timeout.";
@@ -255,7 +229,6 @@ bool wifiModeSTA(const char* input_ssid, const char* input_password) {
     jsonInfoHttp["info"] = "[default] wifi mode on boot: AP+STA";
     createWifiConfigFileByStatus();
   }
-  updateOledWifiInfo();
 
   return true;
 }
@@ -301,7 +274,6 @@ bool wifiModeAPSTA(const char* input_ap_ssid, const char* input_ap_password,
         Serial.println("STA connection timeout.");
       }
       wifiModeAP(ap_ssid, ap_password);
-      updateOledWifiInfo();
 
       jsonInfoHttp.clear();
       jsonInfoHttp["info"] = "STA connection timeout.";
@@ -325,7 +297,6 @@ bool wifiModeAPSTA(const char* input_ap_ssid, const char* input_ap_password,
     }
     createWifiConfigFileByStatus();
   }
-  updateOledWifiInfo();
 
   jsonInfoHttp.clear();
   jsonInfoHttp["info"] = "STA connection succeed.";
@@ -343,7 +314,6 @@ void wifiStop() {
   WiFi.disconnect();
   WIFI_CURRENT_MODE = 0;
   WiFi.mode(WIFI_AP_STA);
-  updateOledWifiInfo();
 }
 
 // wifi mode on boot starts.

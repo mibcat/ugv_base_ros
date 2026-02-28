@@ -47,8 +47,6 @@ void changeEspNowMode(byte inputMode) {
       if (InfoPrint == 1) {
         Serial.println("esp-now mode: none");
       }
-      screenLine_3 = "ESP-NOW: NONE";
-      oled_update();
 
       jsonInfoHttp.clear();
       jsonInfoHttp["info"] = "esp-now mode: none";
@@ -60,8 +58,6 @@ void changeEspNowMode(byte inputMode) {
       if (InfoPrint == 1) {
         Serial.println("esp-now mode: flow-leader(group)");
       }
-      screenLine_3 = "ESP-NOW: F-LEADER-B";
-      oled_update();
 
       jsonInfoHttp.clear();
       jsonInfoHttp["info"] = "esp-now mode: flow-leader(group)";
@@ -73,8 +69,6 @@ void changeEspNowMode(byte inputMode) {
       if (InfoPrint == 1) {
         Serial.println("esp-now mode: flow-leader(single)");
       }
-      screenLine_3 = "ESP-NOW: F-LEADER-S";
-      oled_update();
 
       jsonInfoHttp.clear();
       jsonInfoHttp["info"] = "esp-now mode: flow-leader(single)";
@@ -85,8 +79,6 @@ void changeEspNowMode(byte inputMode) {
       if (InfoPrint == 1) {
         Serial.println("esp-now mode: follower");
       }
-      screenLine_3 = "ESP-NOW: > FOLLOWER <";
-      oled_update();
 
       jsonInfoHttp.clear();
       jsonInfoHttp["info"] = "esp-now mode: follower";
