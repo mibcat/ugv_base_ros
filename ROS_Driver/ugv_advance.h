@@ -89,7 +89,9 @@ bool appendStepJson(String inputName, String inputStep) {
 // a new step at the end of the mission.
 // using feedback.
 void appendStepFB(String inputName, float inputSpd) {
+#if ENABLE_ROARM
   RoArmM2_infoFeedback();
+#endif
   jsonInfoSend.clear();
   jsonInfoSend["T"] = 104;
   jsonInfoSend["x"] = lastX;
@@ -135,7 +137,9 @@ bool insertStepJson(String inputName, int inputStepNum, String inputStep) {
 // insert a new step as the stepNum
 // using the feedback.
 void insertStepFB(String inputName, int inputStepNum, float inputSpd) {
+#if ENABLE_ROARM
   RoArmM2_infoFeedback();
+#endif
   jsonInfoSend.clear();
   jsonInfoSend["T"] = 104;
   jsonInfoSend["x"] = lastX;
@@ -181,7 +185,9 @@ bool replaceStepJson(String inputName, int inputStepNum, String inputStep) {
 // replace the cmd at stepNum.
 // using feedback.
 void replaceStepFB(String inputName, int inputStepNum, float inputSpd) {
+#if ENABLE_ROARM
   RoArmM2_infoFeedback();
+#endif
   jsonInfoSend.clear();
   jsonInfoSend["T"] = 104;
   jsonInfoSend["x"] = lastX;
@@ -312,8 +318,10 @@ void configEEmodeType(byte inputMode) {
   lastY = goalY;
   lastZ = goalZ;
   lastT = goalT;
+#if ENABLE_ROARM
   RoArmM2_baseCoordinateCtrl(initX, initY, initZ, initT);
   RoArmM2_goalPosMove();
+#endif
 }
 
 // config the size of EoAT.
@@ -420,6 +428,7 @@ void baseInfoFeedback() {
 
   switch (moduleType) {
     case 1:
+#if ENABLE_ROARM
       jsonInfoHttp["ax"] = lastX;
       jsonInfoHttp["ay"] = lastY;
       jsonInfoHttp["az"] = lastZ;
@@ -433,6 +442,19 @@ void baseInfoFeedback() {
           servoFeedback[SHOULDER_DRIVEN_SERVO_ID - 11].load;
       jsonInfoHttp["torE"] = servoFeedback[ELBOW_SERVO_ID - 11].load;
       jsonInfoHttp["torH"] = servoFeedback[GRIPPER_SERVO_ID - 11].load;
+#else
+      jsonInfoHttp["ax"] = NAN;
+      jsonInfoHttp["ay"] = NAN;
+      jsonInfoHttp["az"] = NAN;
+      jsonInfoHttp["ab"] = NAN;
+      jsonInfoHttp["as"] = NAN;
+      jsonInfoHttp["ae"] = NAN;
+      jsonInfoHttp["at"] = NAN;
+      jsonInfoHttp["torB"] = 0;
+      jsonInfoHttp["torS"] = 0;
+      jsonInfoHttp["torE"] = 0;
+      jsonInfoHttp["torH"] = 0;
+#endif
       break;
     case 2:
 #if ENABLE_GIMBAL

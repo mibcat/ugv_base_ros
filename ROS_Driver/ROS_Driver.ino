@@ -31,8 +31,10 @@ StaticJsonDocument<1024> jsonInfoHttp;
 // functions for the leds of UGV.
 #include "ugv_led_ctrl.h"
 
+#if ENABLE_ROARM
 // functions for RoArm-M2 ctrl.
 #include "RoArm-M2_module.h"
+#endif
 
 #if ENABLE_GIMBAL
 // functions for gimbal ctrl.
@@ -68,6 +70,7 @@ StaticJsonDocument<1024> jsonInfoHttp;
 #include "http_server.h"
 #endif
 
+#if ENABLE_ROARM
 void moduleType_RoArmM2() {
   unsigned long curr_time = millis();
   if (curr_time - prev_time >= 10) {
@@ -91,6 +94,7 @@ void moduleType_RoArmM2() {
     RoArmM2_infoFeedback();
   }
 }
+#endif
 
 void setup() {
   Serial.begin(115200);
@@ -221,6 +225,7 @@ void setup() {
   }
   delay(500);
 
+#if ENABLE_ROARM
   // init servo ctrl functions.
   screenLine_1 = "servo ctrl";
   oled_update();
@@ -261,6 +266,7 @@ void setup() {
   }
   RoArmM2_dynamicAdaptation(0, ST_TORQUE_MAX, ST_TORQUE_MAX, ST_TORQUE_MAX,
                             ST_TORQUE_MAX);
+#endif
 
   screenLine_1 = "WiFi";
   oled_update();
@@ -293,6 +299,7 @@ void setup() {
   imuCalibration();
 
   screenLine_0 = "UGV ready";
+  screenLine_1 = "";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("UGV started.");
@@ -378,8 +385,10 @@ void loop() {
 
   // read and compute the info of joints.
   switch (moduleType) {
+#if ENABLE_ROARM
     case 1:
       moduleType_RoArmM2();
+#endif
       break;
     case 2:
 #if ENABLE_GIMBAL

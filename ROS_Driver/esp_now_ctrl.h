@@ -153,8 +153,10 @@ void OnDataRecv(const esp_now_recv_info_t* info,
 
   switch (espNowMegsRecv.cmd) {
     case 0: {
+#if ENABLE_ROARM
       RoArmM2_allJointAbsCtrl(espNowMegsRecv.base, espNowMegsRecv.shoulder,
                               espNowMegsRecv.elbow, espNowMegsRecv.hand, 0, 0);
+#endif
       break;
     }
     case 1: {

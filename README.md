@@ -44,10 +44,11 @@ Simply run the **PlatformIO:Build** task.
 
 #### Build options
 
-| build flag         | default | description                          | flash size |
-| ------------------ | ------- | ------------------------------------ | ---------- |
-| ENABLE_GIMBAL      | 0       | use gimbal                           | 2.9 kB     |
-| ENABLE_HTTP_SERVER | 0       | use http server to control the robot | 92.5 kB    |
+| build flag         | default | description                              | flash size |
+| ------------------ | ------- | ---------------------------------------- | ---------- |
+| ENABLE_GIMBAL      | 0       | support gimbal                           | 20.3 kB    |
+| ENABLE_ROARM       | 0       | support RoArm                            | 2.9 kB     |
+| ENABLE_HTTP_SERVER | 0       | support http server to control the robot | 92.5 kB    |
 
 ### Upload firmware to target
 

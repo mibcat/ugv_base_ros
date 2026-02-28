@@ -3,7 +3,9 @@ void jsonCmdReceiveHandler() {
   switch (cmdType) {
     // emergency stop.
     case CMD_EMERGENCY_STOP:
+#if ENABLE_ROARM
       emergencyStopProcessing();
+#endif
       setGoalSpeed(0, 0);
       break;
     case CMD_SPEED_CTRL:
@@ -68,10 +70,12 @@ void jsonCmdReceiveHandler() {
     case CMD_UART_ECHO_MODE:
       setCmdEcho(jsonCmdReceive["cmd"]);
       break;
+#if ENABLE_ROARM
     case CMD_ARM_CTRL_UI:
       RoArmM2_uiCtrl(jsonCmdReceive["E"], jsonCmdReceive["Z"],
                      jsonCmdReceive["R"]);
       break;
+#endif
 
     case CMD_LED_CTRL:
       led_pwm_ctrl(jsonCmdReceive["IO4"], jsonCmdReceive["IO5"]);
@@ -118,6 +122,7 @@ void jsonCmdReceiveHandler() {
                  jsonCmdReceive["eb"]);
       break;
 
+#if ENABLE_ROARM
     // it moves to goal position directly
     // with interpolation.
     case CMD_MOVE_INIT:
@@ -188,9 +193,6 @@ void jsonCmdReceiveHandler() {
     // case CMD_LIGHT_CTRL:	lightCtrl(
     // 											jsonCmdReceive["led"]
     // 											);break;
-    case CMD_SWITCH_OFF:
-      switchEmergencyStop();
-      break;
     case CMD_SINGLE_JOINT_ANGLE:
       RoArmM2_singleJointAngleCtrl(
           jsonCmdReceive["joint"], jsonCmdReceive["angle"],
@@ -211,6 +213,11 @@ void jsonCmdReceiveHandler() {
     case CMD_CONSTANT_CTRL:
       constantCtrl(jsonCmdReceive["m"], jsonCmdReceive["axis"],
                    jsonCmdReceive["cmd"], jsonCmdReceive["spd"]);
+      break;
+#endif
+
+    case CMD_SWITCH_OFF:
+      switchEmergencyStop();
       break;
 
     // mission & steps edit & file edit.
@@ -243,11 +250,11 @@ void jsonCmdReceiveHandler() {
     case CMD_DELETE_LINE:
       deleteSingleLine(jsonCmdReceive["name"], jsonCmdReceive["lineNum"]);
       break;
-
+#if ENABLE_ROARM
     case CMD_TORQUE_CTRL:
       servoTorqueCtrl(254, jsonCmdReceive["cmd"]);
       break;
-
+#endif
     case CMD_CREATE_MISSION:
       createMission(jsonCmdReceive["name"], jsonCmdReceive["intro"]);
       break;
@@ -357,6 +364,7 @@ void jsonCmdReceiveHandler() {
       wifiStop();
       break;
 
+#if ENABLE_ROARM
     // servo settings.
     case CMD_SET_SERVO_ID:
       changeID(jsonCmdReceive["raw"], jsonCmdReceive["new"]);
@@ -367,6 +375,7 @@ void jsonCmdReceiveHandler() {
     case CMD_SET_SERVO_PID:
       setServosPID(jsonCmdReceive["id"], jsonCmdReceive["p"]);
       break;
+#endif
 
     // esp-32 dev ctrl.
     case CMD_REBOOT:
