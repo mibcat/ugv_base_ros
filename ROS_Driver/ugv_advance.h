@@ -435,8 +435,13 @@ void baseInfoFeedback() {
       jsonInfoHttp["torH"] = servoFeedback[GRIPPER_SERVO_ID - 11].load;
       break;
     case 2:
+#if ENABLE_GIMBAL
       jsonInfoHttp["pan"] = panAngleCompute(gimbalFeedback[0].pos);
       jsonInfoHttp["tilt"] = tiltAngleCompute(gimbalFeedback[1].pos);
+#else
+      jsonInfoHttp["pan"] = NAN;
+      jsonInfoHttp["tilt"] = NAN;
+#endif
       break;
   }
 

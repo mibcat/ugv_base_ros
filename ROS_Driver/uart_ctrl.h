@@ -76,6 +76,7 @@ void jsonCmdReceiveHandler() {
     case CMD_LED_CTRL:
       led_pwm_ctrl(jsonCmdReceive["IO4"], jsonCmdReceive["IO5"]);
       break;
+#if ENABLE_GIMBAL
     case CMD_GIMBAL_CTRL_SIMPLE:
       gimbalCtrlSimple(jsonCmdReceive["X"], jsonCmdReceive["Y"],
                        jsonCmdReceive["SPD"], jsonCmdReceive["ACC"]);
@@ -87,11 +88,16 @@ void jsonCmdReceiveHandler() {
     case CMD_GIMBAL_CTRL_STOP:
       gimbalCtrlStop();
       break;
-    case CMD_HEART_BEAT_SET:
-      changeHeartBeatDelay(jsonCmdReceive["cmd"]);
-      break;
     case CMD_GIMBAL_STEADY:
       gimbalSteadySet(jsonCmdReceive["s"], jsonCmdReceive["y"]);
+      break;
+    case CMD_GIMBAL_USER_CTRL:
+      gimbalUserCtrl(jsonCmdReceive["X"], jsonCmdReceive["Y"],
+                     jsonCmdReceive["SPD"]);
+      break;
+#endif
+    case CMD_HEART_BEAT_SET:
+      changeHeartBeatDelay(jsonCmdReceive["cmd"]);
       break;
     case CMD_SET_SPD_RATE:
       setSpdRate(jsonCmdReceive["L"], jsonCmdReceive["R"]);
@@ -101,10 +107,6 @@ void jsonCmdReceiveHandler() {
       break;
     case CMD_SAVE_SPD_RATE:
       saveSpdRate();
-      break;
-    case CMD_GIMBAL_USER_CTRL:
-      gimbalUserCtrl(jsonCmdReceive["X"], jsonCmdReceive["Y"],
-                     jsonCmdReceive["SPD"]);
       break;
 
     // EoAT type settings.

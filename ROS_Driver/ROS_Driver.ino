@@ -34,8 +34,10 @@ StaticJsonDocument<1024> jsonInfoHttp;
 // functions for RoArm-M2 ctrl.
 #include "RoArm-M2_module.h"
 
+#if ENABLE_GIMBAL
 // functions for gimbal ctrl.
 #include "gimbal_module.h"
+#endif
 
 // define json cmd.
 #include "json_cmd.h"
@@ -88,11 +90,6 @@ void moduleType_RoArmM2() {
   if (InfoPrint == 2) {
     RoArmM2_infoFeedback();
   }
-}
-
-void moduleType_Gimbal() {
-  getGimbalFeedback();
-  gimbalSteady(steadyGoalY);
 }
 
 void setup() {
@@ -385,7 +382,10 @@ void loop() {
       moduleType_RoArmM2();
       break;
     case 2:
-      moduleType_Gimbal();
+#if ENABLE_GIMBAL
+      getGimbalFeedback();
+      gimbalSteady(steadyGoalY);
+#endif
       break;
   }
 

@@ -46,6 +46,7 @@ Simply run the **PlatformIO:Build** task.
 
 | build flag         | default | description                          | flash size |
 | ------------------ | ------- | ------------------------------------ | ---------- |
+| ENABLE_GIMBAL      | 0       | use gimbal                           | 2.9 kB     |
 | ENABLE_HTTP_SERVER | 0       | use http server to control the robot | 92.5 kB    |
 
 ### Upload firmware to target
