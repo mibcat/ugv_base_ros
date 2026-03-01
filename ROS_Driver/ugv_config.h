@@ -239,22 +239,24 @@ const uint16_t ANALOG_WRITE_BITS = 8;
 const uint16_t MAX_PWM = pow(2, ANALOG_WRITE_BITS) - 1;
 const uint16_t MIN_PWM = MAX_PWM / 4;
 
-#define PWMA 25  // Motor A PWM control
-#define AIN2 17  // Motor A input 2
-#define AIN1 21  // Motor A input 1
-#define BIN1 22  // Motor B input 1
-#define BIN2 23  // Motor B input 2
-#define PWMB 26  // Motor B PWM control
+#define PWMA 25  // Motor A PWM control (S0)
+#define AIN2 17  // Motor A input 2 (S1)
+#define AIN1 21  // Motor A input 1 (S2)
 
-#define AENCA 35  // Encoder A input
-#define AENCB 34
+#define BIN1 22  // Motor B input 1 (S3)
+#define BIN2 23  // Motor B input 2 (S4)
+#define PWMB 26  // Motor B PWM control (S5)
 
-#define BENCB 16  // Encoder B input
-#define BENCA 27
+#define AENCA 35  // Encoder A input (A_C2)
+#define AENCB 34  // Encoder A input (A_C1)
+
+#define BENCB 16  // Encoder B input (B_C2)
+#define BENCA 27  // Encoder B input (B_C1)
 
 int freq = 100000;
-int channel_A = 5;
-int channel_B = 6;
+// int channel_A = 5; TODO(michel): not used in current code, need to check if
+// it can be removed. int channel_B = 6; TODO(michel): not used in current code,
+// need to check if it can be removed.
 
 // --- --- --- Bus Servo Settings --- --- ---
 

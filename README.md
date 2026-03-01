@@ -82,3 +82,41 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
+
+## Additional information
+
+### Hardware
+
+#### Motor A
+
+##### Encoder A
+
+| connector | CPU pin | name | description     | software name |
+| --------- | ------- | ---- | --------------- | ------------- |
+| H5-3      | IO35    | A_C2 | encoder A pin 2 | AENCA         |
+| H5-4      | IO34    | A_C1 | encoder A pin 1 | AENCB         |
+
+##### Control A
+
+| name | TB6612FNG | description                 | CPU pin | software name |
+| ---- | --------- | --------------------------- | ------- | ------------- |
+| S0   | PWMA      | PWM output (power control)  | IO25    | PWMA          |
+| S1   | AIN2      | input 2 (direction control) | IO17    | AIN2          |
+| S2   | AIN1      | input 1 (direction control) | IO21    | AIN1          |
+
+#### Motor B
+
+##### Encoder B
+
+| connector | CPU pin | name | description     | software name |
+| --------- | ------- | ---- | --------------- | ------------- |
+| H3-3      | IO16    | B_C2 | encoder B pin 2 | BENCB         |
+| H3-4      | IO27    | B_C1 | encoder B pin 1 | BENCA         |
+
+##### Control B
+
+| name | TB6612FNG | description                 | CPU pin | software name |
+| ---- | --------- | --------------------------- | ------- | ------------- |
+| S3   | BIN1      | input 1 (direction control) | IO22    | BIN1          |
+| S4   | BIN2      | input 2 (direction control) | IO23    | BIN2          |
+| S5   | PWMB      | PWM output (power control)  | IO26    | PWMB          |
