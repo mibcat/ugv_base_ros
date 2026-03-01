@@ -385,8 +385,8 @@ void loop() {
 
   // read and compute the info of joints.
   switch (moduleType) {
-#if ENABLE_ROARM
     case 1:
+#if ENABLE_ROARM
       moduleType_RoArmM2();
 #endif
       break;
