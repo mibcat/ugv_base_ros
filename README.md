@@ -49,6 +49,7 @@ Simply run the **PlatformIO:Build** task.
 | ENABLE_GIMBAL      | 0       | support gimbal                             | 20.3 kB    |
 | ENABLE_HTTP_SERVER | 0       | support http server to control the robot   | 92.5 kB    |
 | ENABLE_ROARM       | 0       | support RoArm                              | 2.9 kB     |
+| ENABLE_WIRELESS    | 0       | support Wifi and ESP now                   | 24,9 kB    |
 | ICM_20948_USE_DMP  | defined | enable InvenSense Digital Motion Processor | 14.0 kB    |
 
 ### Upload firmware to target
@@ -120,3 +121,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/gpl-3.0.txt>.
 | S3   | BIN1      | input 1 (direction control) | IO22    | BIN1          |
 | S4   | BIN2      | input 2 (direction control) | IO23    | BIN2          |
 | S5   | PWMB      | PWM output (power control)  | IO26    | PWMB          |
+
+## Notes
+
+Disassemble firmware.bin:
+
+```bash
+~/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-objdump -C -d firmware.elf > disassemble.txt
+```

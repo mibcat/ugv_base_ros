@@ -179,6 +179,7 @@ void OnDataRecv(const esp_now_recv_info_t* info,
 }
 
 void initEspNow() {
+  Serial.println("kgm-debug1: execute esp_now_init()");
   if (esp_now_init() != ESP_OK) {
     jsonInfoHttp.clear();
     jsonInfoHttp["T"] = CMD_ESP_NOW_SEND;
@@ -191,15 +192,18 @@ void initEspNow() {
     return;
   }
 
+  Serial.println("kgm-debug2: set send callback");
   // register esp-now sending call back function.
   esp_now_register_send_cb(OnDataSent);
-
-  // register esp-now receving call back function.
+  
+  Serial.println("kgm-debug3: set send callback");
+  // register esp-now receiving call back function.
   esp_now_register_recv_cb(OnDataRecv);
 
   // register peer
   peerInfo.channel = ESP_NOW_CHANNEL;
   peerInfo.encrypt = ESP_NOW_ENCRYPT;
+  Serial.println("kgm-debug4: finished");
 }
 
 void registerNewFollowerToPeer(String inputMac) {

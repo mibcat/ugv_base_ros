@@ -10,7 +10,9 @@ StaticJsonDocument<1024> jsonInfoHttp;
 #include <PID_v2.h>
 #include <SCServo.h>
 #include <SimpleKalmanFilter.h>
+#if ENABLE_HTTP_SERVER
 #include <WebServer.h>
+#endif
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_system.h>
@@ -56,11 +58,13 @@ StaticJsonDocument<1024> jsonInfoHttp;
 // advance functions for ugv ctrl.
 #include "ugv_advance.h"
 
+#if ENABLE_WIRELESS
 // functions for wifi ctrl.
 #include "wifi_ctrl.h"
 
 // functions for esp-now.
 #include "esp_now_ctrl.h"
+#endif
 
 // functions for uart json ctrl.
 #include "uart_ctrl.h"
@@ -268,12 +272,14 @@ void setup() {
                             ST_TORQUE_MAX);
 #endif
 
+#if ENABLE_WIRELESS
   screenLine_1 = "WiFi";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("WiFi init.");
   }
   initWifi();
+#endif
 
 #if ENABLE_HTTP_SERVER
   screenLine_1 = "http & web";
@@ -284,12 +290,16 @@ void setup() {
   initHttpWebServer();
 #endif
 
+#if ENABLE_WIRELESS
   screenLine_1 = "ESP-NOW";
   oled_update();
   if (InfoPrint == 1) {
     Serial.println("ESP-NOW init.");
   }
   initEspNow();
+
+  getThisDevMacAddress();
+#endif
 
   screenLine_1 = "IMU cal";
   oled_update();
@@ -304,8 +314,6 @@ void setup() {
   if (InfoPrint == 1) {
     Serial.println("UGV started.");
   }
-
-  getThisDevMacAddress();
 
   initEncoders();
 

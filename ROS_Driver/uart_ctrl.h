@@ -305,6 +305,7 @@ void jsonCmdReceiveHandler() {
       missionPlay(jsonCmdReceive["name"], jsonCmdReceive["times"]);
       break;
 
+#if ENABLE_WIRELESS
       // esp-now settings.
     case CMD_BROADCAST_FOLLOWER:
       changeBroadcastMode(jsonCmdReceive["mode"], jsonCmdReceive["mac"]);
@@ -363,6 +364,7 @@ void jsonCmdReceiveHandler() {
     case CMD_WIFI_STOP:
       wifiStop();
       break;
+#endif
 
 #if ENABLE_ROARM
     // servo settings.
