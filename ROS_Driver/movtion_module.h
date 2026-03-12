@@ -118,10 +118,10 @@ static unsigned long lastRightSpdTime = 0;
 int lastEncoderA = 0;
 int lastEncoderB = 0;
 
-double speedGetA;
-double speedGetB;
+float speedGetA;
+float speedGetB;
 
-double plusesRate = 3.14159265359 * WHEEL_D / ONE_CIRCLE_PLUSES;
+float plusesRate = 3.14159265359 * WHEEL_D / ONE_CIRCLE_PLUSES;
 
 void initEncoders() {
   encoderA.attachHalfQuad(AENCA, AENCB);
@@ -132,15 +132,19 @@ void initEncoders() {
 
 void getLeftSpeed() {
   unsigned long currentTime = micros();
+  // Only update every 50ms to avoid oscillation from too-frequent updates
+  if (currentTime - lastLeftSpdTime < 50000) {
+    return;
+  }
   long encoderPulsesA = encoderA.getCount();
   if (!SET_MOTOR_DIR) {
     speedGetA = (plusesRate * (encoderPulsesA - lastEncoderA)) /
-                ((double)(currentTime - lastLeftSpdTime) / 1000000);
+                ((float)(currentTime - lastLeftSpdTime) / 1000000);
     en_odom_l =
         ((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   } else {
     speedGetA = (plusesRate * (lastEncoderA - encoderPulsesA)) /
-                ((double)(currentTime - lastLeftSpdTime) / 1000000);
+                ((float)(currentTime - lastLeftSpdTime) / 1000000);
     en_odom_l =
         -((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   }
@@ -150,15 +154,19 @@ void getLeftSpeed() {
 
 void getRightSpeed() {
   unsigned long currentTime = micros();
+  // Only update every 50ms to avoid oscillation from too-frequent updates
+  if (currentTime - lastRightSpdTime < 50000) {
+    return;
+  }
   long encoderPulsesB = encoderB.getCount();
   if (!SET_MOTOR_DIR) {
     speedGetB = (plusesRate * (encoderPulsesB - lastEncoderB)) /
-                ((double)(currentTime - lastRightSpdTime) / 1000000);
+                ((float)(currentTime - lastRightSpdTime) / 1000000);
     en_odom_r =
         ((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   } else {
     speedGetB = (plusesRate * (lastEncoderB - encoderPulsesB)) /
-                ((double)(currentTime - lastRightSpdTime) / 1000000);
+                ((float)(currentTime - lastRightSpdTime) / 1000000);
     en_odom_r =
         -((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
   }
@@ -171,10 +179,10 @@ void getRightSpeed() {
 PID_v2 pidA(__kp, __ki, __kd, PID::Direct);
 PID_v2 pidB(__kp, __ki, __kd, PID::Direct);
 
-double outputA = 0;
-double outputB = 0;
-double setpointA = 0;
-double setpointB = 0;
+float outputA = 0;
+float outputB = 0;
+float setpointA = 0;
+float setpointB = 0;
 
 int setpoint_interval = 200;
 unsigned long setpoint_cmd_recv = millis();
