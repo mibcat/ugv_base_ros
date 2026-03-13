@@ -193,7 +193,7 @@ void setup() {
   mm_settings(mainType, moduleType);
 
   init_oled();
-  screenLine_0 = "0.96mibcat";
+  screenLine_0 = GIT_COMMIT_HASH;
   screenLine_1 = "booting...";
   oled_update();
 
