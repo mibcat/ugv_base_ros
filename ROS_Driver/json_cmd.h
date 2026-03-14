@@ -266,16 +266,6 @@
 // {"T":112,"mode":0,"b":1000,"s":1000,"e":1000,"h":1000}
 #define CMD_DYNAMIC_ADAPTATION 112
 
-// switch-12V ctrl.(NOT FOR UVG)
-// pwm: -255 ~ 0(off) ~ +255
-// {"T":113,"pwm_a":-255,"pwm_b":-255}
-#define CMD_SWITCH_CTRL 113
-
-// light ctrl.(NOT FOR UVG)
-// led: 0(off) - 255(max)
-// {"T":114,"led":255}
-#define CMD_LIGHT_CTRL 114
-
 // switch off.
 // {"T":115}
 #define CMD_SWITCH_OFF 115

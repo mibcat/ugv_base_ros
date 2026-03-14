@@ -185,14 +185,6 @@ void jsonCmdReceiveHandler() {
                                 jsonCmdReceive["s"], jsonCmdReceive["e"],
                                 jsonCmdReceive["h"]);
       break;
-    // this two funcs are NOT for UGV.
-    // case CMD_SWITCH_CTRL: switchCtrl(
-    // 											jsonCmdReceive["pwm_a"],
-    // 											jsonCmdReceive["pwm_b"]
-    // 											);break;
-    // case CMD_LIGHT_CTRL:	lightCtrl(
-    // 											jsonCmdReceive["led"]
-    // 											);break;
     case CMD_SINGLE_JOINT_ANGLE:
       RoArmM2_singleJointAngleCtrl(
           jsonCmdReceive["joint"], jsonCmdReceive["angle"],

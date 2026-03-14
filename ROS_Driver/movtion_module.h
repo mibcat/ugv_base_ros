@@ -1,6 +1,3 @@
-// switch parts
-int switch_pwm_A = 0;
-int switch_pwm_B = 0;
 bool usePIDCompute = true;
 float spd_rate_A = 1.0;
 float spd_rate_B = 1.0;
@@ -29,56 +26,6 @@ void switchEmergencyStop() {
 
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, LOW);
-}
-
-void switchPortCtrlA(float pwmInputA) {
-  int pwmIntA = round(pwmInputA * spd_rate_A);
-  if (abs(pwmIntA) < 1e-6) {
-    digitalWrite(AIN1, LOW);
-    digitalWrite(AIN2, LOW);
-    return;
-  }
-
-  if (pwmIntA > 0) {
-    digitalWrite(AIN1, LOW);
-    digitalWrite(AIN2, HIGH);
-    ledcWrite(PWMA, pwmIntA);
-  } else {
-    digitalWrite(AIN1, HIGH);
-    digitalWrite(AIN2, LOW);
-    ledcWrite(PWMA, -pwmIntA);
-  }
-}
-
-void switchPortCtrlB(float pwmInputB) {
-  int pwmIntB = round(pwmInputB * spd_rate_B);
-  if (abs(pwmIntB) < 1e-6) {
-    digitalWrite(BIN1, LOW);
-    digitalWrite(BIN2, LOW);
-    return;
-  }
-
-  if (pwmIntB > 0) {
-    digitalWrite(BIN1, LOW);
-    digitalWrite(BIN2, HIGH);
-    ledcWrite(PWMB, pwmIntB);
-  } else {
-    digitalWrite(BIN1, HIGH);
-    digitalWrite(BIN2, LOW);
-    ledcWrite(PWMB, -pwmIntB);
-  }
-}
-
-void switchCtrl(int pwmIntA, int pwmIntB) {
-  switch_pwm_A = pwmIntA;
-  switch_pwm_B = pwmIntB;
-  switchPortCtrlA(switch_pwm_A);
-  switchPortCtrlB(switch_pwm_B);
-}
-
-void lightCtrl(int pwmIn) {
-  switch_pwm_A = pwmIn;
-  switchPortCtrlA(-abs(switch_pwm_A));
 }
 
 void setSpdRate(float inputL, float inputR) {
