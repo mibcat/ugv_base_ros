@@ -1,7 +1,18 @@
+#include <math.h>
+
 bool usePIDCompute = true;
 float spd_rate_A = 1.0;
 float spd_rate_B = 1.0;
 bool heartbeatStopFlag = false;
+static unsigned long governorLastTimeStamp{};
+
+void switchEmergencyStop() {
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, LOW);
+}
 
 void movtionPinInit() {
   pinMode(AIN1, OUTPUT);
@@ -11,21 +22,10 @@ void movtionPinInit() {
   pinMode(BIN2, OUTPUT);
   pinMode(PWMB, OUTPUT);
 
-  ledcAttach(PWMA, freq, ANALOG_WRITE_BITS);
-  ledcAttach(PWMB, freq, ANALOG_WRITE_BITS);
+  ledcAttach(PWMA, MOTOR_CONTROL_FREQ, ANALOG_WRITE_BITS);
+  ledcAttach(PWMB, MOTOR_CONTROL_FREQ, ANALOG_WRITE_BITS);
 
-  digitalWrite(AIN1, LOW);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, LOW);
-  digitalWrite(BIN2, LOW);
-}
-
-void switchEmergencyStop() {
-  digitalWrite(AIN1, LOW);
-  digitalWrite(AIN2, LOW);
-
-  digitalWrite(BIN1, LOW);
-  digitalWrite(BIN2, LOW);
+  switchEmergencyStop();
 }
 
 void setSpdRate(float inputL, float inputR) {
@@ -59,16 +59,15 @@ void getSpdRate() {
 ESP32Encoder encoderA;
 ESP32Encoder encoderB;
 
-static unsigned long lastTime = 0;
-static unsigned long lastLeftSpdTime = 0;
-static unsigned long lastRightSpdTime = 0;
-int lastEncoderA = 0;
-int lastEncoderB = 0;
+// time stamp of last speed calculation
+static unsigned long lastSpeedTime = 0;
 
+// current speeds in m/s
 float speedGetA;
 float speedGetB;
 
-float plusesRate = 3.14159265359 * WHEEL_D / ONE_CIRCLE_PLUSES;
+// m/inc
+float plusesRate = static_cast<float>(M_PI) * WHEEL_D / ONE_CIRCLE_PLUSES;
 
 void initEncoders() {
   encoderA.attachHalfQuad(AENCA, AENCB);
@@ -77,59 +76,43 @@ void initEncoders() {
   encoderB.setCount(0);
 }
 
-void getLeftSpeed() {
-  unsigned long currentTime = micros();
-  // Only update every 50ms to avoid oscillation from too-frequent updates
-  if (currentTime - lastLeftSpdTime < 50000) {
-    return;
-  }
-  long encoderPulsesA = encoderA.getCount();
-  if (!SET_MOTOR_DIR) {
-    speedGetA = (plusesRate * (encoderPulsesA - lastEncoderA)) /
-                ((float)(currentTime - lastLeftSpdTime) / 1000000);
-    en_odom_l =
-        ((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
-  } else {
-    speedGetA = (plusesRate * (lastEncoderA - encoderPulsesA)) /
-                ((float)(currentTime - lastLeftSpdTime) / 1000000);
-    en_odom_l =
-        -((float)encoderPulsesA / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
-  }
-  lastEncoderA = encoderPulsesA;
-  lastLeftSpdTime = currentTime;
-}
+void getWheelSpeeds() {
+  // get current encoder pulses
+  auto encoderPulsesA = encoderA.getCount();
+  auto encoderPulsesB = encoderB.getCount();
 
-void getRightSpeed() {
-  unsigned long currentTime = micros();
-  // Only update every 50ms to avoid oscillation from too-frequent updates
-  if (currentTime - lastRightSpdTime < 50000) {
-    return;
-  }
-  long encoderPulsesB = encoderB.getCount();
-  if (!SET_MOTOR_DIR) {
-    speedGetB = (plusesRate * (encoderPulsesB - lastEncoderB)) /
-                ((float)(currentTime - lastRightSpdTime) / 1000000);
-    en_odom_r =
-        ((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
-  } else {
-    speedGetB = (plusesRate * (lastEncoderB - encoderPulsesB)) /
-                ((float)(currentTime - lastRightSpdTime) / 1000000);
-    en_odom_r =
-        -((float)encoderPulsesB / ONE_CIRCLE_PLUSES) * WHEEL_D * 3.14159265359;
-  }
-  lastEncoderB = encoderPulsesB;
-  lastRightSpdTime = currentTime;
-}
+  // get current time and calculate dt since last speed calculation
+  auto currentTime = micros();
+  auto dt = (float)(currentTime - lastSpeedTime) / 1000000;
 
+  // Calculate new absolute odometry from encoder counts
+  float odomLeft, odomRight;
+  if (!SET_MOTOR_DIR) {
+    odomLeft = (float)encoderPulsesA * plusesRate;
+    odomRight = (float)encoderPulsesB * plusesRate;
+  } else {
+    odomLeft = -(float)encoderPulsesA * plusesRate;
+    odomRight = -(float)encoderPulsesB * plusesRate;
+  }
+
+  // Derive speeds from odometry changes (using previous en_odom values)
+  speedGetA = (odomLeft - en_odom_l) / dt;
+  speedGetB = (odomRight - en_odom_r) / dt;
+
+  // Update odometry for next iteration
+  en_odom_l = odomLeft;
+  en_odom_r = odomRight;
+  lastSpeedTime = currentTime;
+}
 // --- PID Controller ---
 
 PID_v2 pidA(__kp, __ki, __kd, PID::Direct);
 PID_v2 pidB(__kp, __ki, __kd, PID::Direct);
 
-float outputA = 0;
-float outputB = 0;
-float setpointA = 0;
-float setpointB = 0;
+double outputA = 0;
+double outputB = 0;
+double setpointA = 0;
+double setpointB = 0;
 
 int setpoint_interval = 200;
 unsigned long setpoint_cmd_recv = millis();
@@ -320,7 +303,7 @@ void mm_settings(byte inputMain, byte inputModule) {
     TRACK_WIDTH = 0.141;
     SET_MOTOR_DIR = true;
   }
-  plusesRate = 3.14159265359 * WHEEL_D / ONE_CIRCLE_PLUSES;
+  plusesRate = static_cast<float>(M_PI) * WHEEL_D / ONE_CIRCLE_PLUSES;
 
   if (mainType == 1) {
     screenLine_1 = "Rasp";

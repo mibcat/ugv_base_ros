@@ -16,7 +16,6 @@ StaticJsonDocument<1024> jsonInfoHttp;
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_system.h>
-#include <math.h>
 #include <nvs_flash.h>
 
 #include "ICM_20948.h"
@@ -102,6 +101,7 @@ void moduleType_RoArmM2() {
 
 void setup() {
   Serial.begin(115200);
+  Serial.setTxBufferSize(512);
   while (!Serial) {
   }
   Wire.begin(S_SDA, S_SCL, 400000);
@@ -413,13 +413,13 @@ void loop() {
     runNewJsonCmd = false;
   }
 
-  getLeftSpeed();
-
-  LeftPidControllerCompute();
-
-  getRightSpeed();
-
-  RightPidControllerCompute();
+  auto now = micros();
+  if (now - governorLastTimeStamp > 100000) {
+    getWheelSpeeds();
+    LeftPidControllerCompute();
+    RightPidControllerCompute();
+    governorLastTimeStamp = now;
+  }
 
   oledInfoUpdate();
 

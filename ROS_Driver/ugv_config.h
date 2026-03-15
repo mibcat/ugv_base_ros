@@ -253,10 +253,8 @@ const uint16_t MIN_PWM = MAX_PWM / 4;
 #define BENCB 16  // Encoder B input (B_C2)
 #define BENCA 27  // Encoder B input (B_C1)
 
-int freq = 100000;
-// int channel_A = 5; TODO(michel): not used in current code, need to check if
-// it can be removed. int channel_B = 6; TODO(michel): not used in current code,
-// need to check if it can be removed.
+// PWM frequency for the motor control (100 kHz !)
+constexpr uint32_t MOTOR_CONTROL_FREQ  = 100000L;
 
 // --- --- --- Bus Servo Settings --- --- ---
 
@@ -330,9 +328,9 @@ float windup_limits = 255;
 // #define TRACK_WIDTH	0.141
 // #define SET_MOTOR_DIR true
 
-double WHEEL_D = 0.0800;
+float WHEEL_D = 0.0800;
 int ONE_CIRCLE_PLUSES = 660;
-double TRACK_WIDTH = 0.172;
+float TRACK_WIDTH = 0.172;
 bool SET_MOTOR_DIR = false;
 
 #define IO4_PIN 4
@@ -366,7 +364,7 @@ double ax, ay, az;
 double mx, my, mz;
 double gx, gy, gz;
 
-double en_odom_l, en_odom_r;
+float en_odom_l, en_odom_r;
 
 unsigned long imu_last_time = micros();
 
