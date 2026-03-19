@@ -393,7 +393,9 @@ void baseInfoFeedback() {
   jsonInfoHttp.clear();
   jsonInfoHttp["T"] = FEEDBACK_BASE_INFO;
 
+  // actual measured left wheel speed [m/s]
   jsonInfoHttp["L"] = speedGetA;
+  // actual measured right wheel speed [m/s]
   jsonInfoHttp["R"] = speedGetB;
 
   // jsonInfoHttp["r"] = icm_roll;
@@ -484,8 +486,8 @@ void setCmdEcho(bool inputCmd) { uartCmdEcho = inputCmd; }
 void saveSpdRate() {
   jsonInfoHttp.clear();
   jsonInfoHttp["T"] = CMD_SET_SPD_RATE;
-  jsonInfoHttp["L"] = spd_rate_A;
-  jsonInfoHttp["R"] = spd_rate_B;
+  jsonInfoHttp["L"] = speedFactorA;
+  jsonInfoHttp["R"] = speedFactorB;
   String getInfoJsonString;
   serializeJson(jsonInfoHttp, getInfoJsonString);
   appendStepJson("boot", getInfoJsonString);

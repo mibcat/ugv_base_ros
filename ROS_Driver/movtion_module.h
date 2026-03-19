@@ -1,8 +1,8 @@
 #include <math.h>
 
 bool usePIDCompute = true;
-float spd_rate_A = 1.0;
-float spd_rate_B = 1.0;
+float speedFactorA = 1.0;
+float speedFactorB = 1.0;
 bool heartbeatStopFlag = false;
 static unsigned long governorLastTimeStamp{};
 
@@ -37,16 +37,16 @@ void setSpdRate(float inputL, float inputR) {
   if (inputR > 1) {
     inputR = 1;
   }
-  spd_rate_A = inputL;
-  spd_rate_B = inputR;
+  speedFactorA = inputL;
+  speedFactorB = inputR;
 }
 
 void getSpdRate() {
   jsonInfoHttp.clear();
   jsonInfoHttp["T"] = CMD_GET_SPD_RATE;
 
-  jsonInfoHttp["L"] = spd_rate_A;
-  jsonInfoHttp["R"] = spd_rate_B;
+  jsonInfoHttp["L"] = speedFactorA;
+  jsonInfoHttp["R"] = speedFactorB;
 
   String getInfoJsonString;
   serializeJson(jsonInfoHttp, getInfoJsonString);
@@ -62,8 +62,9 @@ ESP32Encoder encoderB;
 // time stamp of last speed calculation
 static unsigned long lastSpeedTime = 0;
 
-// current speeds in m/s
+// current left speeds [m/s]
 float speedGetA;
+// current right speeds [m/s]
 float speedGetB;
 
 // m/inc
@@ -104,6 +105,7 @@ void getWheelSpeeds() {
   en_odom_r = odomRight;
   lastSpeedTime = currentTime;
 }
+
 // --- PID Controller ---
 
 PID_v2 pidA(__kp, __ki, __kd, PID::Direct);
@@ -119,10 +121,6 @@ unsigned long setpoint_cmd_recv = millis();
 unsigned long setpoint_last_time = millis();
 float setpointA_buffer;
 float setpointB_buffer;
-float setpointA_last;
-float setpointB_last;
-float change_offset = 0.005;
-bool new_setpoint_flag = false;
 
 void pidControllerInit() {
   pidA.Start(speedGetA, outputA, setpointA);
@@ -195,17 +193,17 @@ void setGoalSpeed(float inputLeft, float inputRight) {
     return;
   }
 
-  setpointA = inputLeft * spd_rate_A;
-  setpointB = inputRight * spd_rate_B;
+  setpointA = inputLeft * speedFactorA;
+  setpointB = inputRight * speedFactorB;
 
   if (setpointA != setpointA_buffer) {
     pidA.Setpoint(setpointA);
-    setpointA_buffer = inputLeft;
+    setpointA_buffer = setpointA;
   }
 
   if (setpointB != setpointB_buffer) {
     pidB.Setpoint(setpointB);
-    setpointB_buffer = inputRight;
+    setpointB_buffer = setpointB;
   }
 }
 
@@ -249,9 +247,12 @@ void setPID(float inputP, float inputI, float inputD, float inputLimits) {
 }
 
 void rosCtrl(float rosX, float rosZ) {
-  setpointA = rosX - (rosZ * TRACK_WIDTH / 2.0);
-  setpointB = rosX + (rosZ * TRACK_WIDTH / 2.0);
-  setGoalSpeed(setpointA, setpointB);
+  // Convert kinematic commands to wheel speeds via differential drive
+  float goalA = rosX - (rosZ * TRACK_WIDTH / 2.0);
+  float goalB = rosX + (rosZ * TRACK_WIDTH / 2.0);
+
+  // Pass to setGoalSpeed for scaling and PID update
+  setGoalSpeed(goalA, goalB);
 }
 
 void heartBeatCtrl() {
