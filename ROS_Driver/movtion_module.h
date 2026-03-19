@@ -1,20 +1,35 @@
 #include <math.h>
 
 // ============ Adaptive Measurement Window Parameters ============
-// Defines the range of measurement window durations for adaptive speed measurement
-const unsigned long WINDOW_US_MIN = 100000;    // 100ms - minimum window for fast response at high speeds
-const unsigned long WINDOW_US_MAX = 500000;    // 500ms - maximum window for accuracy at low speeds
-const float SPEED_FOR_MIN_WINDOW = 0.30;       // 0.3 m/s - speed threshold for using minimum window
-const float SPEED_FOR_MAX_WINDOW = 0.05;       // 0.05 m/s - speed threshold for using maximum window
+// Defines the range of measurement window durations for adaptive speed
+// measurement
+const unsigned long WINDOW_US_MIN =
+    100000;  // 100ms - minimum window for fast response at high speeds
+const unsigned long WINDOW_US_MAX =
+    500000;  // 500ms - maximum window for accuracy at low speeds
+const float SPEED_FOR_MIN_WINDOW =
+    0.30;  // 0.3 m/s - speed threshold for using minimum window
+const float SPEED_FOR_MAX_WINDOW =
+    0.05;  // 0.05 m/s - speed threshold for using maximum window
 
 // Current adaptive measurement window in microseconds
 static unsigned long adaptiveWindowUs = 100000;
+
+// ============ Wheel Speed Ramping Parameters ============
+// Defines acceleration/deceleration rates for wheel speed setpoint changes
+const float WHEEL_ACCEL_MAX = 0.4;   // m/s² - acceleration when ramping up
+const float WHEEL_DECEL_MAX = 1.0;   // m/s² - deceleration when ramping down (faster)
 
 bool usePIDCompute = true;
 float speedFactorA = 1.0;
 float speedFactorB = 1.0;
 bool heartbeatStopFlag = false;
 static unsigned long lastWheelSpeedMeasureTime{};
+
+// Ramped wheel speed setpoints (for smooth acceleration/deceleration)
+static float setpointA_ramped = 0.0;
+static float setpointB_ramped = 0.0;
+static unsigned long lastSetGoalSpeedTime = 0;
 
 void switchEmergencyStop() {
   digitalWrite(AIN1, LOW);
@@ -88,11 +103,13 @@ void initEncoders() {
 }
 
 // Calculate adaptive measurement window based on current wheel speeds
-// Uses linear interpolation between SPEED_FOR_MAX_WINDOW and SPEED_FOR_MIN_WINDOW
+// Uses linear interpolation between SPEED_FOR_MAX_WINDOW and
+// SPEED_FOR_MIN_WINDOW
 void calculateAdaptiveWindowUs() {
   // Calculate maximum absolute wheel speed from global speedGetA and speedGetB
-  float maxAbsSpeed = (abs(speedGetA) > abs(speedGetB)) ? abs(speedGetA) : abs(speedGetB);
-  
+  float maxAbsSpeed =
+      (abs(speedGetA) > abs(speedGetB)) ? abs(speedGetA) : abs(speedGetB);
+
   if (maxAbsSpeed >= SPEED_FOR_MIN_WINDOW) {
     // High speed: use minimum window for faster feedback
     adaptiveWindowUs = WINDOW_US_MIN;
@@ -101,8 +118,11 @@ void calculateAdaptiveWindowUs() {
     adaptiveWindowUs = WINDOW_US_MAX;
   } else {
     // Medium speed: linear interpolation between min and max
-    float normalized = (maxAbsSpeed - SPEED_FOR_MAX_WINDOW) / (SPEED_FOR_MIN_WINDOW - SPEED_FOR_MAX_WINDOW);
-    adaptiveWindowUs = (unsigned long)(WINDOW_US_MAX - normalized * (WINDOW_US_MAX - WINDOW_US_MIN));
+    float normalized = (maxAbsSpeed - SPEED_FOR_MAX_WINDOW) /
+                       (SPEED_FOR_MIN_WINDOW - SPEED_FOR_MAX_WINDOW);
+    adaptiveWindowUs =
+        (unsigned long)(WINDOW_US_MAX -
+                        normalized * (WINDOW_US_MAX - WINDOW_US_MIN));
   }
 }
 
@@ -225,8 +245,38 @@ void setGoalSpeed(float inputLeft, float inputRight) {
     return;
   }
 
-  setpointA = inputLeft * speedFactorA;
-  setpointB = inputRight * speedFactorB;
+  // Calculate scaled target setpoints
+  float targetA = inputLeft * speedFactorA;
+  float targetB = inputRight * speedFactorB;
+
+  // Calculate time since last setGoalSpeed call
+  unsigned long now_us = micros();
+  float dt = (now_us - lastSetGoalSpeedTime) / 1e6f;
+  lastSetGoalSpeedTime = now_us;
+
+  // Safety clamp on dt: cap at 100ms, allow very small dt for smooth ramp
+  if (dt > 0.1f) dt = 0.1f;
+  if (dt < 0.0001f) dt = 0.0001f;
+
+  // Ramp left wheel speed (use different rates for acceleration vs. deceleration)
+  float delta_needed_A = targetA - setpointA_ramped;
+  // Accelerating: delta and current setpoint have same sign (speeding up in current direction)
+  // Braking: delta and current setpoint have different signs (slowing down current direction)
+  bool isAcceleratingA = (delta_needed_A * setpointA_ramped) > 0;
+  float max_delta_A = isAcceleratingA ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
+  setpointA_ramped += fminf(fmaxf(delta_needed_A, -max_delta_A), max_delta_A);
+
+  // Ramp right wheel speed (use different rates for acceleration vs. deceleration)
+  float delta_needed_B = targetB - setpointB_ramped;
+  // Accelerating: delta and current setpoint have same sign (speeding up in current direction)
+  // Braking: delta and current setpoint have different signs (slowing down current direction)
+  bool isAcceleratingB = (delta_needed_B * setpointB_ramped) > 0;
+  float max_delta_B = isAcceleratingB ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
+  setpointB_ramped += fminf(fmaxf(delta_needed_B, -max_delta_B), max_delta_B);
+
+  // Update PID setpoints with ramped values
+  setpointA = setpointA_ramped;
+  setpointB = setpointB_ramped;
 
   if (setpointA != setpointA_buffer) {
     pidA.Setpoint(setpointA);
@@ -273,16 +323,21 @@ void rosCtrl(float rosX, float rosZ) {
   float goalA = rosX - (rosZ * TRACK_WIDTH / 2.0);
   float goalB = rosX + (rosZ * TRACK_WIDTH / 2.0);
 
-  // Pass to setGoalSpeed for scaling and PID update
+  // Pass to setGoalSpeed for ramping, scaling, and PID update
+  // This ensures smooth acceleration/deceleration for any input source
   setGoalSpeed(goalA, goalB);
 }
 
 void heartBeatCtrl() {
   if (currentTimeMillis - lastCmdRecvTime > HEART_BEAT_DELAY) {
-    if (!heartbeatStopFlag) {
-      heartbeatStopFlag = true;
-      setGoalSpeed(0, 0);
-    }
+    // Keep commanding zero speed every loop iteration to enable ramping to
+    // complete The ramping in setGoalSpeed() will gradually decelerate the
+    // wheels
+    setGoalSpeed(0, 0);
+    heartbeatStopFlag = true;
+  } else {
+    // Reset flag when commands are being received again
+    heartbeatStopFlag = false;
   }
 }
 
