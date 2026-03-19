@@ -1,10 +1,20 @@
 #include <math.h>
 
+// ============ Adaptive Measurement Window Parameters ============
+// Defines the range of measurement window durations for adaptive speed measurement
+const unsigned long WINDOW_US_MIN = 100000;    // 100ms - minimum window for fast response at high speeds
+const unsigned long WINDOW_US_MAX = 500000;    // 500ms - maximum window for accuracy at low speeds
+const float SPEED_FOR_MIN_WINDOW = 0.30;       // 0.3 m/s - speed threshold for using minimum window
+const float SPEED_FOR_MAX_WINDOW = 0.05;       // 0.05 m/s - speed threshold for using maximum window
+
+// Current adaptive measurement window in microseconds
+static unsigned long adaptiveWindowUs = 100000;
+
 bool usePIDCompute = true;
 float speedFactorA = 1.0;
 float speedFactorB = 1.0;
 bool heartbeatStopFlag = false;
-static unsigned long governorLastTimeStamp{};
+static unsigned long lastWheelSpeedMeasureTime{};
 
 void switchEmergencyStop() {
   digitalWrite(AIN1, LOW);
@@ -77,6 +87,25 @@ void initEncoders() {
   encoderB.setCount(0);
 }
 
+// Calculate adaptive measurement window based on current wheel speeds
+// Uses linear interpolation between SPEED_FOR_MAX_WINDOW and SPEED_FOR_MIN_WINDOW
+void calculateAdaptiveWindowUs() {
+  // Calculate maximum absolute wheel speed from global speedGetA and speedGetB
+  float maxAbsSpeed = (abs(speedGetA) > abs(speedGetB)) ? abs(speedGetA) : abs(speedGetB);
+  
+  if (maxAbsSpeed >= SPEED_FOR_MIN_WINDOW) {
+    // High speed: use minimum window for faster feedback
+    adaptiveWindowUs = WINDOW_US_MIN;
+  } else if (maxAbsSpeed <= SPEED_FOR_MAX_WINDOW) {
+    // Low speed: use maximum window for better accuracy
+    adaptiveWindowUs = WINDOW_US_MAX;
+  } else {
+    // Medium speed: linear interpolation between min and max
+    float normalized = (maxAbsSpeed - SPEED_FOR_MAX_WINDOW) / (SPEED_FOR_MIN_WINDOW - SPEED_FOR_MAX_WINDOW);
+    adaptiveWindowUs = (unsigned long)(WINDOW_US_MAX - normalized * (WINDOW_US_MAX - WINDOW_US_MIN));
+  }
+}
+
 void getWheelSpeeds() {
   // get current encoder pulses
   auto encoderPulsesA = encoderA.getCount();
@@ -104,6 +133,9 @@ void getWheelSpeeds() {
   en_odom_l = odomLeft;
   en_odom_r = odomRight;
   lastSpeedTime = currentTime;
+
+  // Update adaptive measurement window based on current wheel speeds
+  calculateAdaptiveWindowUs();
 }
 
 // --- PID Controller ---
@@ -207,30 +239,20 @@ void setGoalSpeed(float inputLeft, float inputRight) {
   }
 }
 
-void LeftPidControllerCompute() {
+void PidControllerCompute() {
   if (!usePIDCompute) {
     return;
   }
 
+  // Left wheel
   outputA = pidA.Run(speedGetA);
-  if (abs(outputA) < THRESHOLD_PWM) {
-    outputA = 0;
-  }
   if (setpointA == 0 && speedGetA == 0) {
     outputA = 0;
   }
   leftCtrl(outputA);
-}
 
-void RightPidControllerCompute() {
-  if (!usePIDCompute) {
-    return;
-  }
-
+  // Right wheel
   outputB = pidB.Run(speedGetB);
-  if (abs(outputB) < THRESHOLD_PWM) {
-    outputB = 0;
-  }
   if (setpointB == 0 && speedGetB == 0) {
     outputB = 0;
   }

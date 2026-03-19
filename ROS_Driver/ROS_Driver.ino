@@ -414,11 +414,10 @@ void loop() {
   }
 
   auto now = micros();
-  if (now - governorLastTimeStamp > 100000) {
+  if (now - lastWheelSpeedMeasureTime > adaptiveWindowUs) {
     getWheelSpeeds();
-    LeftPidControllerCompute();
-    RightPidControllerCompute();
-    governorLastTimeStamp = now;
+    PidControllerCompute();
+    lastWheelSpeedMeasureTime = now;
   }
 
   oledInfoUpdate();
