@@ -6,6 +6,7 @@ void jsonCmdReceiveHandler() {
 #if ENABLE_ROARM
       emergencyStopProcessing();
 #endif
+      usePIDCompute = true;
       setGoalSpeed(0, 0);
       break;
     case CMD_SPEED_CTRL:
@@ -13,6 +14,7 @@ void jsonCmdReceiveHandler() {
           jsonCmdReceive.containsKey("R")) {
         if (jsonCmdReceive["L"].is<float>() &&
             jsonCmdReceive["R"].is<float>()) {
+          usePIDCompute = true;
           heartbeatStopFlag = false;
           lastCmdRecvTime = millis();
           setGoalSpeed(jsonCmdReceive["L"], jsonCmdReceive["R"]);
@@ -27,6 +29,7 @@ void jsonCmdReceiveHandler() {
       rightCtrl(jsonCmdReceive["R"]);
       break;
     case CMD_ROS_CTRL:
+      usePIDCompute = true;
       heartbeatStopFlag = false;
       lastCmdRecvTime = millis();
       rosCtrl(jsonCmdReceive["X"], jsonCmdReceive["Z"]);

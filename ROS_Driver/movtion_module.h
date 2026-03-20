@@ -233,8 +233,6 @@ void rightCtrl(float pwmInputB) {
 }
 
 void setGoalSpeed(float inputLeft, float inputRight) {
-  usePIDCompute = true;
-
   if (inputLeft < -2.0 || inputLeft > 2.0) {
     return;
   }
