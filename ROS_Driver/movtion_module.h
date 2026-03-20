@@ -30,12 +30,42 @@ bool usePIDCompute = true;
 float speedFactorA = 1.0;
 float speedFactorB = 1.0;
 bool heartbeatStopFlag = false;
+bool emergencyStopActive = false;
 static unsigned long lastWheelSpeedMeasureTime{};
 
+/**
+ * @brief Update motion control flags.
+ *
+ * This function updates the motion control flags based on the current control
+ * mode. It returns false if the emergency stop is active, preventing motion
+ * commands from being processed. Otherwise, it returns true, allowing motion
+ * command processing to proceed.
+ *
+ * @param pidMode True if PID control should be used (ROS control mode), false
+ * for direct PWM control.
+ * @return True if motion command processing can proceed, false if emergency
+ * stop is active.
+ */
+bool updateMotionControlFlags(bool pidMode) {
+  if (emergencyStopActive) {
+    // motion commands ignored during emergency stop
+    return false;
+  }
+
+  // enable or disable PID compute based on control mode (ROS control vs. direct
+  // PWM)
+  usePIDCompute = pidMode;
+  // reset heartbeat timer
+  heartbeatStopFlag = false;
+  lastCmdRecvTime = millis();
+  // motion command processing can proceed
+  return true;
+}
+
 void switchEmergencyStop() {
+  // Cut motor power immediately
   digitalWrite(AIN1, LOW);
   digitalWrite(AIN2, LOW);
-
   digitalWrite(BIN1, LOW);
   digitalWrite(BIN2, LOW);
 }
@@ -88,12 +118,12 @@ ESP32Encoder encoderB;
 // time stamp of last speed calculation
 static unsigned long lastSpeedTime = 0;
 
-// current left speeds [m/s]
+/** current left speeds [m/s] */
 float speedGetA;
-// current right speeds [m/s]
+/** current right speeds [m/s] */
 float speedGetB;
 
-// m/inc
+/** distance per pulse [m/pulse] */
 float plusesRate = static_cast<float>(M_PI) * WHEEL_D / ONE_CIRCLE_PLUSES;
 
 void initEncoders() {
@@ -103,9 +133,16 @@ void initEncoders() {
   encoderB.setCount(0);
 }
 
-// Calculate adaptive measurement window based on current wheel speeds
-// Uses linear interpolation between SPEED_FOR_MAX_WINDOW and
-// SPEED_FOR_MIN_WINDOW
+/**
+ * @brief Calculate adaptive measurement window.
+ *
+ * This function calculates the adaptive measurement window based on the current
+ * wheel speeds. It uses linear interpolation between SPEED_FOR_MAX_WINDOW and
+ * SPEED_FOR_MIN_WINDOW depending on the the current maximum absolute wheel
+ * speed (speedGetA and speedGetB). The resulting adaptiveWindowUs is set to a
+ * value between WINDOW_US_MAX and WINDOW_US_MIN, allowing for faster feedback
+ * at high speeds and better accuracy at low speeds.
+ */
 void calculateAdaptiveWindowUs() {
   // Calculate maximum absolute wheel speed from global speedGetA and speedGetB
   float maxAbsSpeed =
@@ -127,6 +164,12 @@ void calculateAdaptiveWindowUs() {
   }
 }
 
+/**
+ * @brief Get wheel speeds.
+ *
+ * This function calculates the current wheel speeds based on encoder counts
+ * and updates the adaptive measurement window accordingly.
+ */
 void getWheelSpeeds() {
   // get current encoder pulses
   auto encoderPulsesA = encoderA.getCount();
@@ -172,11 +215,23 @@ double setpointB = 0;
 float setpointABuffer;
 float setpointBBuffer;
 
+// Important note to implement a full reset of the PID controller:
+// 1) reset the global variables outputA/B and setpointA/B to zero
+// 2) the internal PID states are only reset when mode is changing from manual
+//    to automatic, so we need to set the mode to manual before calling Start()
+//    which is changing the mode back to automatic.
+
 void pidControllerInit() {
+  outputA = 0.0;
+  setpointA = 0.0;
+  pidA.SetMode(PID::Manual);
   pidA.Start(speedGetA, outputA, setpointA);
   pidA.SetOutputLimits(-255, 255);
   pidA.SetMode(PID::Automatic);
 
+  outputB = 0.0;
+  setpointB = 0.0;
+  pidB.SetMode(PID::Manual);
   pidB.Start(speedGetB, outputB, setpointB);
   pidB.SetOutputLimits(-255, 255);
   pidB.SetMode(PID::Automatic);
@@ -233,6 +288,11 @@ void rightCtrl(float pwmInputB) {
 }
 
 void setGoalSpeed(float inputLeft, float inputRight) {
+  // Cannot set speed while emergency stop is active
+  if (emergencyStopActive) {
+    return;
+  }
+
   if (inputLeft < -2.0 || inputLeft > 2.0) {
     return;
   }
@@ -401,4 +461,39 @@ void mm_settings(byte inputMain, byte inputModule) {
   } else if (moduleType == 2) {
     screenLine_1 += " PT";
   }
+}
+
+/**
+ * @brief Activate emergency stop.
+ *
+ * This function sets the emergency stop flag and immediately cuts power to the
+ * motors.
+ */
+void setMotionEmergencyStop() {
+  emergencyStopActive = true;
+  usePIDCompute = false;
+  switchEmergencyStop();
+}
+
+// Due to bad SW design, the location of this function must be after all the
+// declarations of the global variables it uses, so it is placed at the end of
+// this file together with the setMotionEmergencyStop() function.
+
+/**
+ * @brief Reset emergency stop.
+ *
+ * This function clears the emergency stop flag, reinitializes the PID
+ * controllers, and resets the ramped setpoints to zero for a smooth restart.
+ */
+void resetMotionEmergencyStop() {
+  // reinitialize PID controllers to reset internal state
+  pidControllerInit();
+
+  // reset ramped setpoints for smooth acceleration from stop
+  setpointARamped = 0.0;
+  setpointBRamped = 0.0;
+  lastSetGoalSpeedTime = micros();
+
+  // clear emergency stop flag to allow motion commands to be processed again
+  emergencyStopActive = false;
 }

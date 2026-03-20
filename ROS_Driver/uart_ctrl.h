@@ -6,33 +6,35 @@ void jsonCmdReceiveHandler() {
 #if ENABLE_ROARM
       emergencyStopProcessing();
 #endif
-      usePIDCompute = true;
-      setGoalSpeed(0, 0);
+      setMotionEmergencyStop();
+      break;
+    case CMD_RESET_EMERGENCY:
+      resetMotionEmergencyStop();
       break;
     case CMD_SPEED_CTRL:
       if (jsonCmdReceive.containsKey("T") && jsonCmdReceive.containsKey("L") &&
           jsonCmdReceive.containsKey("R")) {
         if (jsonCmdReceive["L"].is<float>() &&
             jsonCmdReceive["R"].is<float>()) {
-          usePIDCompute = true;
-          heartbeatStopFlag = false;
-          lastCmdRecvTime = millis();
-          setGoalSpeed(jsonCmdReceive["L"], jsonCmdReceive["R"]);
+          // PID control for direct speed control of left and right wheels
+          if (updateMotionControlFlags(true)) {
+            setGoalSpeed(jsonCmdReceive["L"], jsonCmdReceive["R"]);
+          }
         }
       }
       break;
     case CMD_PWM_INPUT:
-      usePIDCompute = false;
-      heartbeatStopFlag = false;
-      lastCmdRecvTime = millis();
-      leftCtrl(jsonCmdReceive["L"]);
-      rightCtrl(jsonCmdReceive["R"]);
+      // no PID control with direct PWM input for left and right wheels
+      if (updateMotionControlFlags(false)) {
+        leftCtrl(jsonCmdReceive["L"]);
+        rightCtrl(jsonCmdReceive["R"]);
+      }
       break;
     case CMD_ROS_CTRL:
-      usePIDCompute = true;
-      heartbeatStopFlag = false;
-      lastCmdRecvTime = millis();
-      rosCtrl(jsonCmdReceive["X"], jsonCmdReceive["Z"]);
+      // PID control with ROS control with kinematic commands
+      if (updateMotionControlFlags(true)) {  // PID mode
+        rosCtrl(jsonCmdReceive["X"], jsonCmdReceive["Z"]);
+      }
       break;
     case CMD_SET_MOTOR_PID:
       setPID(jsonCmdReceive["P"], jsonCmdReceive["I"], jsonCmdReceive["D"],
