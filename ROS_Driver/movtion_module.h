@@ -1,35 +1,36 @@
 #include <math.h>
 
 // ============ Adaptive Measurement Window Parameters ============
-// Defines the range of measurement window durations for adaptive speed
-// measurement
-const unsigned long WINDOW_US_MIN =
-    100000;  // 100ms - minimum window for fast response at high speeds
-const unsigned long WINDOW_US_MAX =
-    500000;  // 500ms - maximum window for accuracy at low speeds
-const float SPEED_FOR_MIN_WINDOW =
-    0.30;  // 0.3 m/s - speed threshold for using minimum window
-const float SPEED_FOR_MAX_WINDOW =
-    0.05;  // 0.05 m/s - speed threshold for using maximum window
+
+// 100ms - minimum window for fast response at high speeds
+const unsigned long WINDOW_US_MIN = 100000;
+// 500ms - maximum window for accuracy at low speeds
+const unsigned long WINDOW_US_MAX = 500000;
+// 0.3 m/s - speed threshold for using minimum window
+const float SPEED_FOR_MIN_WINDOW = 0.30;
+// 0.05 m/s - speed threshold for using maximum window
+const float SPEED_FOR_MAX_WINDOW = 0.05;
 
 // Current adaptive measurement window in microseconds
 static unsigned long adaptiveWindowUs = 100000;
 
 // ============ Wheel Speed Ramping Parameters ============
-// Defines acceleration/deceleration rates for wheel speed setpoint changes
-const float WHEEL_ACCEL_MAX = 0.4;   // m/s² - acceleration when ramping up
-const float WHEEL_DECEL_MAX = 1.0;   // m/s² - deceleration when ramping down (faster)
+
+// acceleration when ramping up in [m/s²]
+const float WHEEL_ACCEL_MAX = 0.4;
+// deceleration when ramping down in [m/s²]
+const float WHEEL_DECEL_MAX = 1.0;
+
+// Ramped wheel speed setpoints (for smooth acceleration/deceleration)
+static float setpointARamped = 0.0;
+static float setpointBRamped = 0.0;
+static unsigned long lastSetGoalSpeedTime = 0;
 
 bool usePIDCompute = true;
 float speedFactorA = 1.0;
 float speedFactorB = 1.0;
 bool heartbeatStopFlag = false;
 static unsigned long lastWheelSpeedMeasureTime{};
-
-// Ramped wheel speed setpoints (for smooth acceleration/deceleration)
-static float setpointA_ramped = 0.0;
-static float setpointB_ramped = 0.0;
-static unsigned long lastSetGoalSpeedTime = 0;
 
 void switchEmergencyStop() {
   digitalWrite(AIN1, LOW);
@@ -168,11 +169,8 @@ double outputB = 0;
 double setpointA = 0;
 double setpointB = 0;
 
-int setpoint_interval = 200;
-unsigned long setpoint_cmd_recv = millis();
-unsigned long setpoint_last_time = millis();
-float setpointA_buffer;
-float setpointB_buffer;
+float setpointABuffer;
+float setpointBBuffer;
 
 void pidControllerInit() {
   pidA.Start(speedGetA, outputA, setpointA);
@@ -258,34 +256,40 @@ void setGoalSpeed(float inputLeft, float inputRight) {
   if (dt > 0.1f) dt = 0.1f;
   if (dt < 0.0001f) dt = 0.0001f;
 
-  // Ramp left wheel speed (use different rates for acceleration vs. deceleration)
-  float delta_needed_A = targetA - setpointA_ramped;
-  // Accelerating: delta and current setpoint have same sign (speeding up in current direction)
-  // Braking: delta and current setpoint have different signs (slowing down current direction)
-  bool isAcceleratingA = (delta_needed_A * setpointA_ramped) > 0;
-  float max_delta_A = isAcceleratingA ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
-  setpointA_ramped += fminf(fmaxf(delta_needed_A, -max_delta_A), max_delta_A);
+  // Ramp left wheel speed (use different rates for acceleration vs.
+  // deceleration)
+  float deltaNeededA = targetA - setpointARamped;
+  // Accelerating: delta and current setpoint have same sign (speeding up in
+  // current direction) Braking: delta and current setpoint have different signs
+  // (slowing down current direction)
+  bool isAcceleratingA = (deltaNeededA * setpointARamped) > 0;
+  float maxDeltaA =
+      isAcceleratingA ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
+  setpointARamped += fminf(fmaxf(deltaNeededA, -maxDeltaA), maxDeltaA);
 
-  // Ramp right wheel speed (use different rates for acceleration vs. deceleration)
-  float delta_needed_B = targetB - setpointB_ramped;
-  // Accelerating: delta and current setpoint have same sign (speeding up in current direction)
-  // Braking: delta and current setpoint have different signs (slowing down current direction)
-  bool isAcceleratingB = (delta_needed_B * setpointB_ramped) > 0;
-  float max_delta_B = isAcceleratingB ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
-  setpointB_ramped += fminf(fmaxf(delta_needed_B, -max_delta_B), max_delta_B);
+  // Ramp right wheel speed (use different rates for acceleration vs.
+  // deceleration)
+  float deltaNeededB = targetB - setpointBRamped;
+  // Accelerating: delta and current setpoint have same sign (speeding up in
+  // current direction) Braking: delta and current setpoint have different signs
+  // (slowing down current direction)
+  bool isAcceleratingB = (deltaNeededB * setpointBRamped) > 0;
+  float maxDeltaB =
+      isAcceleratingB ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
+  setpointBRamped += fminf(fmaxf(deltaNeededB, -maxDeltaB), maxDeltaB);
 
   // Update PID setpoints with ramped values
-  setpointA = setpointA_ramped;
-  setpointB = setpointB_ramped;
+  setpointA = setpointARamped;
+  setpointB = setpointBRamped;
 
-  if (setpointA != setpointA_buffer) {
+  if (setpointA != setpointABuffer) {
     pidA.Setpoint(setpointA);
-    setpointA_buffer = setpointA;
+    setpointABuffer = setpointA;
   }
 
-  if (setpointB != setpointB_buffer) {
+  if (setpointB != setpointBBuffer) {
     pidB.Setpoint(setpointB);
-    setpointB_buffer = setpointB;
+    setpointBBuffer = setpointB;
   }
 }
 
@@ -296,6 +300,7 @@ void PidControllerCompute() {
 
   // Left wheel
   outputA = pidA.Run(speedGetA);
+  // prevent motor creep
   if (setpointA == 0 && speedGetA == 0) {
     outputA = 0;
   }
@@ -303,6 +308,7 @@ void PidControllerCompute() {
 
   // Right wheel
   outputB = pidB.Run(speedGetB);
+  // prevent motor creep
   if (setpointB == 0 && speedGetB == 0) {
     outputB = 0;
   }
@@ -319,19 +325,18 @@ void setPID(float inputP, float inputI, float inputD, float inputLimits) {
 }
 
 void rosCtrl(float rosX, float rosZ) {
-  // Convert kinematic commands to wheel speeds via differential drive
+  // Convert kinematic commands to wheel speeds [m/s]! via differential drive
   float goalA = rosX - (rosZ * TRACK_WIDTH / 2.0);
   float goalB = rosX + (rosZ * TRACK_WIDTH / 2.0);
 
   // Pass to setGoalSpeed for ramping, scaling, and PID update
-  // This ensures smooth acceleration/deceleration for any input source
   setGoalSpeed(goalA, goalB);
 }
 
 void heartBeatCtrl() {
   if (currentTimeMillis - lastCmdRecvTime > HEART_BEAT_DELAY) {
     // Keep commanding zero speed every loop iteration to enable ramping to
-    // complete The ramping in setGoalSpeed() will gradually decelerate the
+    // complete. The ramping in setGoalSpeed() will gradually decelerate the
     // wheels
     setGoalSpeed(0, 0);
     heartbeatStopFlag = true;
