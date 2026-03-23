@@ -302,7 +302,7 @@ String jsonFeedbackWeb = "";
 //  --- --- --- pid controller --- --- ---
 
 float __kp = 20.0;
-float __ki = 2000.0;
+float __ki = 1000.0;
 float __kd = 0;
 float windup_limits = 255;
 

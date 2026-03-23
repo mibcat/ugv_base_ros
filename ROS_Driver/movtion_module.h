@@ -14,18 +14,6 @@ const float SPEED_FOR_MAX_WINDOW = 0.05;
 // Current adaptive measurement window in microseconds
 static unsigned long adaptiveWindowUs = 100000;
 
-// ============ Wheel Speed Ramping Parameters ============
-
-// acceleration when ramping up in [m/s²]
-const float WHEEL_ACCEL_MAX = 0.4;
-// deceleration when ramping down in [m/s²]
-const float WHEEL_DECEL_MAX = 1.0;
-
-// Ramped wheel speed setpoints (for smooth acceleration/deceleration)
-static float setpointARamped = 0.0;
-static float setpointBRamped = 0.0;
-static unsigned long lastSetGoalSpeedTime = 0;
-
 bool usePIDCompute = true;
 float speedFactorA = 1.0;
 float speedFactorB = 1.0;
@@ -302,43 +290,8 @@ void setGoalSpeed(float inputLeft, float inputRight) {
   }
 
   // Calculate scaled target setpoints
-  float targetA = inputLeft * speedFactorA;
-  float targetB = inputRight * speedFactorB;
-
-  // Calculate time since last setGoalSpeed call
-  unsigned long now_us = micros();
-  float dt = (now_us - lastSetGoalSpeedTime) / 1e6f;
-  lastSetGoalSpeedTime = now_us;
-
-  // Safety clamp on dt: cap at 100ms, allow very small dt for smooth ramp
-  if (dt > 0.1f) dt = 0.1f;
-  if (dt < 0.0001f) dt = 0.0001f;
-
-  // Ramp left wheel speed (use different rates for acceleration vs.
-  // deceleration)
-  float deltaNeededA = targetA - setpointARamped;
-  // Accelerating: delta and current setpoint have same sign (speeding up in
-  // current direction) Braking: delta and current setpoint have different signs
-  // (slowing down current direction)
-  bool isAcceleratingA = (deltaNeededA * setpointARamped) > 0;
-  float maxDeltaA =
-      isAcceleratingA ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
-  setpointARamped += fminf(fmaxf(deltaNeededA, -maxDeltaA), maxDeltaA);
-
-  // Ramp right wheel speed (use different rates for acceleration vs.
-  // deceleration)
-  float deltaNeededB = targetB - setpointBRamped;
-  // Accelerating: delta and current setpoint have same sign (speeding up in
-  // current direction) Braking: delta and current setpoint have different signs
-  // (slowing down current direction)
-  bool isAcceleratingB = (deltaNeededB * setpointBRamped) > 0;
-  float maxDeltaB =
-      isAcceleratingB ? WHEEL_ACCEL_MAX * dt : WHEEL_DECEL_MAX * dt;
-  setpointBRamped += fminf(fmaxf(deltaNeededB, -maxDeltaB), maxDeltaB);
-
-  // Update PID setpoints with ramped values
-  setpointA = setpointARamped;
-  setpointB = setpointBRamped;
+  setpointA = inputLeft * speedFactorA;
+  setpointB = inputRight * speedFactorB;
 
   if (setpointA != setpointABuffer) {
     pidA.Setpoint(setpointA);
@@ -488,11 +441,6 @@ void setMotionEmergencyStop() {
 void resetMotionEmergencyStop() {
   // reinitialize PID controllers to reset internal state
   pidControllerInit();
-
-  // reset ramped setpoints for smooth acceleration from stop
-  setpointARamped = 0.0;
-  setpointBRamped = 0.0;
-  lastSetGoalSpeedTime = micros();
 
   // clear emergency stop flag to allow motion commands to be processed again
   emergencyStopActive = false;
