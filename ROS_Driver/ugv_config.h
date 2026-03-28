@@ -254,7 +254,7 @@ const uint16_t MIN_PWM = MAX_PWM / 4;
 #define BENCA 27  // Encoder B input (B_C1)
 
 // PWM frequency for the motor control (100 kHz !)
-constexpr uint32_t MOTOR_CONTROL_FREQ  = 100000L;
+constexpr uint32_t MOTOR_CONTROL_FREQ = 100000L;
 
 // --- --- --- Bus Servo Settings --- --- ---
 
@@ -393,23 +393,3 @@ double qc3 = 0.0;
 
 float max_ax = 0;
 float min_ax = 0;
-
-// int32_t biasGyroX, biasGyroY, biasGyroZ;
-// int32_t biasAccelX, biasAccelY, biasAccelZ;
-// int32_t biasCPassX, biasCPassY, biasCPassZ;
-
-// Define a storage struct for the biases. Include a non-zero header and a
-// simple checksum
-struct biasStore {
-  int32_t biasGyroX = 0;
-  int32_t biasGyroY = 0;
-  int32_t biasGyroZ = 0;
-  int32_t biasAccelX = 0;
-  int32_t biasAccelY = 0;
-  int32_t biasAccelZ = 0;
-  int32_t biasCPassX = 0;
-  int32_t biasCPassY = 0;
-  int32_t biasCPassZ = 0;
-};
-
-biasStore store;

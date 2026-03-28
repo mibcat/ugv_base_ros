@@ -1,60 +1,84 @@
-#define AD0_VAL 0
-ICM_20948_I2C myICM;
+#include <ICM20948_WE.h>
 
-// SimpleKalmanFilter  kf_ax(kf_accel_q, kf_accel_r, kf_accel_p);
-// SimpleKalmanFilter  kf_ay(kf_accel_q, kf_accel_r, kf_accel_p);
-// SimpleKalmanFilter  kf_az(kf_accel_q, kf_accel_r, kf_accel_p);
+ICM20948_WE myICM = ICM20948_WE();
 
-// SimpleKalmanFilter  kf_gx(kf_accel_q, kf_accel_r, kf_accel_p);
-// SimpleKalmanFilter  kf_gy(kf_accel_q, kf_accel_r, kf_accel_p);
-// SimpleKalmanFilter  kf_gz(kf_accel_q, kf_accel_r, kf_accel_p);
+void imu_init() {
+  if (myICM.init()) {
+    // execute auto calibration
+    // after auto calibration range and dlpf are as follows:
+    // acc: range = ±2g, dlpf = 6
+    // gyro: range = ±250dps, dlpf = 6
+    myICM.autoOffsets();
 
-void imu_init() {}
+    // currently only a simple implementation
+    myICM.enableFifo(false);
+    myICM.enableLowPower(false);
 
-void updateIMUData() {}
+    // set acc and gyro range and dlpf according to the application
+    // myICM.setAccRange(ICM20948_ACC_RANGE_2G);
+    // myICM.setAccDLPF(ICM20948_DLPF_6);
+    // myICM.setGyrRange(ICM20948_GYRO_RANGE_250);
+    // myICM.setGyrDLPF(ICM20948_DLPF_6);
+
+    // setup magnetometer
+    if (myICM.initMagnetometer()) {
+      myICM.setMagOpMode(AK09916_CONT_MODE_10HZ);
+      Serial.println(F("Magnetometer initialized successfully."));
+    } else {
+      Serial.println(F("Magnetometer initialization failed."));
+    }
+    Serial.println(F("IMU initialized successfully."));
+  } else {
+    Serial.println(F("IMU initialization failed."));
+  }
+}
+
+void updateIMUData() {
+  xyzFloat value;
+  // get raw acc and gyro data
+  myICM.readSensor();
+
+  // get corrected acc g values in [g]
+  myICM.getGValues(&value);
+  ax = value.x;
+  ay = value.y;
+  az = value.z;
+
+  // get corrected gyro values in [dps]
+  myICM.getGyrValues(&value);
+  gx = value.x;
+  gy = value.y;
+  gz = value.z;
+
+  // get magnetometer values in [uT]
+  myICM.getMagValues(&value);
+  mx = value.x;
+  my = value.y;
+  mz = value.z;
+}
 
 // {"T":127}
 // reset qc0 ~ q3
 void imuCalibration() {
-  bool bias_success =
-      (myICM.getBiasGyroX(&store.biasGyroX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasGyroY(&store.biasGyroY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasGyroZ(&store.biasGyroZ) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelX(&store.biasAccelX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelY(&store.biasAccelY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelZ(&store.biasAccelZ) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassX(&store.biasCPassX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassY(&store.biasCPassY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassZ(&store.biasCPassZ) == ICM_20948_Stat_Ok);
-
-  if (!bias_success) {
-    return;
-  }
-
-  myICM.setBiasGyroX(-store.biasGyroX);
-  myICM.setBiasGyroX(-store.biasGyroY);
-  myICM.setBiasGyroX(-store.biasGyroZ);
-  myICM.setBiasAccelX(-store.biasAccelX);
-  myICM.setBiasAccelX(-store.biasAccelY);
-  myICM.setBiasAccelX(-store.biasAccelZ);
-  myICM.setBiasCPassX(-store.biasCPassX);
-  myICM.setBiasCPassX(-store.biasCPassY);
-  myICM.setBiasCPassX(-store.biasCPassZ);
-
   jsonInfoHttp.clear();
   jsonInfoHttp["T"] = FEEDBACK_IMU_OFFSET;
 
-  jsonInfoHttp["gx"] = store.biasGyroX;
-  jsonInfoHttp["gy"] = store.biasGyroY;
-  jsonInfoHttp["gz"] = store.biasGyroZ;
+  // execute auto calibration
+  myICM.autoOffsets();
 
-  jsonInfoHttp["ax"] = store.biasAccelX;
-  jsonInfoHttp["ay"] = store.biasAccelY;
-  jsonInfoHttp["az"] = store.biasAccelZ;
+  xyzFloat gyrBias = myICM.getGyrOffsets();
+  jsonInfoHttp["gx"] = gyrBias.x;
+  jsonInfoHttp["gy"] = gyrBias.y;
+  jsonInfoHttp["gz"] = gyrBias.z;
 
-  jsonInfoHttp["cx"] = store.biasCPassX;
-  jsonInfoHttp["cy"] = store.biasCPassY;
-  jsonInfoHttp["cz"] = store.biasCPassZ;
+  xyzFloat accBias = myICM.getAccOffsets();
+  jsonInfoHttp["ax"] = accBias.x;
+  jsonInfoHttp["ay"] = accBias.y;
+  jsonInfoHttp["az"] = accBias.z;
+
+  jsonInfoHttp["cx"] = 0.0;
+  jsonInfoHttp["cy"] = 0.0;
+  jsonInfoHttp["cz"] = 0.0;
 
   String getInfoJsonString;
   serializeJson(jsonInfoHttp, getInfoJsonString);
@@ -64,63 +88,6 @@ void imuCalibration() {
   qc1 = 0.0;
   qc2 = 0.0;
   qc3 = 0.0;
-}
-
-// {"T":127}
-void imuCalibration_bk() {
-  bool bias_success =
-      (myICM.getBiasGyroX(&store.biasGyroX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasGyroY(&store.biasGyroY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasGyroZ(&store.biasGyroZ) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelX(&store.biasAccelX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelY(&store.biasAccelY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelZ(&store.biasAccelZ) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassX(&store.biasCPassX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassY(&store.biasCPassY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassZ(&store.biasCPassZ) == ICM_20948_Stat_Ok);
-
-  if (!bias_success) {
-    jsonInfoHttp.clear();
-    jsonInfoHttp["T"] = FEEDBACK_IMU_OFFSET;
-
-    jsonInfoHttp["status"] = 0;
-
-    String getInfoJsonString;
-    serializeJson(jsonInfoHttp, getInfoJsonString);
-    Serial.println(getInfoJsonString);
-    return;
-  }
-
-  myICM.setBiasGyroX(store.biasGyroX);
-  myICM.setBiasGyroY(store.biasGyroY);
-  myICM.setBiasGyroZ(store.biasGyroZ);
-  myICM.setBiasAccelX(store.biasAccelX);
-  myICM.setBiasAccelY(store.biasAccelY);
-  myICM.setBiasAccelZ(store.biasAccelZ);
-  myICM.setBiasCPassX(store.biasCPassX);
-  myICM.setBiasCPassY(store.biasCPassY);
-  myICM.setBiasCPassZ(store.biasCPassZ);
-
-  jsonInfoHttp.clear();
-  jsonInfoHttp["T"] = FEEDBACK_IMU_OFFSET;
-
-  jsonInfoHttp["status"] = 1;
-
-  jsonInfoHttp["gx"] = store.biasGyroX;
-  jsonInfoHttp["gy"] = store.biasGyroY;
-  jsonInfoHttp["gz"] = store.biasGyroZ;
-
-  jsonInfoHttp["ax"] = store.biasAccelX;
-  jsonInfoHttp["ay"] = store.biasAccelY;
-  jsonInfoHttp["az"] = store.biasAccelZ;
-
-  jsonInfoHttp["cx"] = store.biasCPassX;
-  jsonInfoHttp["cy"] = store.biasCPassY;
-  jsonInfoHttp["cz"] = store.biasCPassZ;
-
-  String getInfoJsonString;
-  serializeJson(jsonInfoHttp, getInfoJsonString);
-  Serial.println(getInfoJsonString);
 }
 
 // {"T":126}
@@ -173,85 +140,34 @@ void getIMUOffset() {
   Serial.println(getInfoJsonString);
 }
 
-// {"T":128}
-void getIMUOffset_bk() {
-  bool bias_success =
-      (myICM.getBiasGyroX(&store.biasGyroX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasGyroY(&store.biasGyroY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasGyroZ(&store.biasGyroZ) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelX(&store.biasAccelX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelY(&store.biasAccelY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasAccelZ(&store.biasAccelZ) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassX(&store.biasCPassX) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassY(&store.biasCPassY) == ICM_20948_Stat_Ok);
-  bias_success &= (myICM.getBiasCPassZ(&store.biasCPassZ) == ICM_20948_Stat_Ok);
-
-  if (!bias_success) {
-    return;
-  }
-
-  jsonInfoHttp.clear();
-  jsonInfoHttp["T"] = FEEDBACK_IMU_OFFSET;
-
-  jsonInfoHttp["gx"] = store.biasGyroX;
-  jsonInfoHttp["gy"] = store.biasGyroY;
-  jsonInfoHttp["gz"] = store.biasGyroZ;
-
-  jsonInfoHttp["ax"] = store.biasAccelX;
-  jsonInfoHttp["ay"] = store.biasAccelY;
-  jsonInfoHttp["az"] = store.biasAccelZ;
-
-  jsonInfoHttp["cx"] = store.biasCPassX;
-  jsonInfoHttp["cy"] = store.biasCPassY;
-  jsonInfoHttp["cz"] = store.biasCPassZ;
-
-  String getInfoJsonString;
-  serializeJson(jsonInfoHttp, getInfoJsonString);
-  Serial.println(getInfoJsonString);
-}
-
 // {"T":129,"gx":0,"gy":0,"gz":0,"ax":0,"ay":0,"az":0,"cx":0,"cy":0,"cz":0}
 void setIMUOffset(int32_t inGX, int32_t inGY, int32_t inGZ, int32_t inAX,
                   int32_t inAY, int32_t inAZ, int32_t inCX, int32_t inCY,
                   int32_t inCZ) {
-  store.biasGyroX = inGX;
-  store.biasGyroY = inGY;
-  store.biasGyroZ = inGZ;
+  // set gyro offset
+  xyzFloat gyrBias(inGX, inGY, inGZ);
+  myICM.setGyrOffsets(gyrBias);
 
-  store.biasAccelX = inAX;
-  store.biasAccelY = inAY;
-  store.biasAccelZ = inAZ;
-
-  store.biasCPassX = inCX;
-  store.biasCPassY = inCY;
-  store.biasCPassZ = inCZ;
-
-  myICM.setBiasGyroX(store.biasGyroX);
-  myICM.setBiasGyroX(store.biasGyroY);
-  myICM.setBiasGyroX(store.biasGyroZ);
-  myICM.setBiasAccelX(store.biasAccelX);
-  myICM.setBiasAccelX(store.biasAccelY);
-  myICM.setBiasAccelX(store.biasAccelZ);
-  myICM.setBiasCPassX(store.biasCPassX);
-  myICM.setBiasCPassX(store.biasCPassY);
-  myICM.setBiasCPassX(store.biasCPassZ);
+  // set acc offset
+  xyzFloat accBias(inAX, inAY, inAZ);
+  myICM.setAccOffsets(accBias);
 
   jsonInfoHttp.clear();
   jsonInfoHttp["T"] = FEEDBACK_IMU_OFFSET;
 
   jsonInfoHttp["status"] = 1;
 
-  jsonInfoHttp["gx"] = store.biasGyroX;
-  jsonInfoHttp["gy"] = store.biasGyroY;
-  jsonInfoHttp["gz"] = store.biasGyroZ;
+  jsonInfoHttp["gx"] = gyrBias.x;
+  jsonInfoHttp["gy"] = gyrBias.y;
+  jsonInfoHttp["gz"] = gyrBias.z;
 
-  jsonInfoHttp["ax"] = store.biasAccelX;
-  jsonInfoHttp["ay"] = store.biasAccelY;
-  jsonInfoHttp["az"] = store.biasAccelZ;
+  jsonInfoHttp["ax"] = accBias.x;
+  jsonInfoHttp["ay"] = accBias.y;
+  jsonInfoHttp["az"] = accBias.z;
 
-  jsonInfoHttp["cx"] = store.biasCPassX;
-  jsonInfoHttp["cy"] = store.biasCPassY;
-  jsonInfoHttp["cz"] = store.biasCPassZ;
+  jsonInfoHttp["cx"] = 0.0;
+  jsonInfoHttp["cy"] = 0.0;
+  jsonInfoHttp["cz"] = 0.0;
 
   String getInfoJsonString;
   serializeJson(jsonInfoHttp, getInfoJsonString);
