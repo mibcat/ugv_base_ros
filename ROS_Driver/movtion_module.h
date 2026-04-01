@@ -4,12 +4,12 @@
 
 // 100ms - minimum window for fast response at high speeds
 const unsigned long WINDOW_US_MIN = 100000;
-// 500ms - maximum window for accuracy at low speeds
-const unsigned long WINDOW_US_MAX = 500000;
+// 250ms - maximum window for low speed turns, optimized for in-place rotations
+const unsigned long WINDOW_US_MAX = 250000;
 // 0.3 m/s - speed threshold for using minimum window
 const float SPEED_FOR_MIN_WINDOW = 0.30;
-// 0.05 m/s - speed threshold for using maximum window
-const float SPEED_FOR_MAX_WINDOW = 0.05;
+// 0.15 m/s - speed threshold for using maximum window
+const float SPEED_FOR_MAX_WINDOW = 0.15;
 
 // Current adaptive measurement window in microseconds
 static unsigned long adaptiveWindowUs = 100000;
@@ -337,8 +337,8 @@ void setPID(float inputP, float inputI, float inputD, float inputLimits) {
 
 void rosCtrl(float rosX, float rosZ) {
   // Convert kinematic commands to wheel speeds [m/s]! via differential drive
-  float goalA = rosX - (rosZ * TRACK_WIDTH / 2.0);
-  float goalB = rosX + (rosZ * TRACK_WIDTH / 2.0);
+  float goalA = rosX - (rosZ * effective_track_width / 2.0);
+  float goalB = rosX + (rosZ * effective_track_width / 2.0);
 
   // Pass to setGoalSpeed for ramping, scaling, and PID update
   setGoalSpeed(goalA, goalB);
@@ -397,7 +397,11 @@ void mm_settings(byte inputMain, byte inputModule) {
     TRACK_WIDTH = 0.141;
     SET_MOTOR_DIR = true;
   }
+
+  // [m/inc] depends on wheel diameter and encoder resolution
   plusesRate = static_cast<float>(M_PI) * WHEEL_D / ONE_CIRCLE_PLUSES;
+  // although will not work well without having a correction factor
+  effective_track_width = TRACK_WIDTH;
 
   if (mainType == 1) {
     screenLine_1 = "Rasp";

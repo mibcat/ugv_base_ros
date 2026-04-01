@@ -533,3 +533,16 @@ void saveMainTypeModuleTpye(byte inputMain, byte inputModule) {
     Serial.println("same mm_json already saved.");
   }
 }
+
+void setTrackWidth(const float& track_width) {
+  effective_track_width = track_width;
+}
+
+void getTrackWidth() {
+  jsonInfoHttp.clear();
+  jsonInfoHttp["T"] = CMD_GET_EFFECTIVE_TRACK_WIDTH;
+  jsonInfoHttp["w"] = effective_track_width;
+  String getInfoJsonString;
+  serializeJson(jsonInfoHttp, getInfoJsonString);
+  Serial.println(getInfoJsonString);
+}

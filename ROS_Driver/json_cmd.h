@@ -1,3 +1,13 @@
+// own defintions
+
+// set effective track width
+// {"T":90,"w":0.200}
+#define CMD_SET_EFFECTIVE_TRACK_WIDTH 90
+
+// get effective track width {"T":91}
+// {"T":91,"w":0.200}
+#define CMD_GET_EFFECTIVE_TRACK_WIDTH 91
+
 // ---===< Feedback Info >===---
 // base info feedback.
 // {"T":1001,"L":0,"R":0,"gx":0,"gy":0,"gz":0,"ax":0,"ay":0,"az":0,"mx":0,"my":0,"mz":0,"odl":0,"odr":0,"v":11.0}

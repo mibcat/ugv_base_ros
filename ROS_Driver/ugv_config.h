@@ -301,10 +301,10 @@ String jsonFeedbackWeb = "";
 
 //  --- --- --- pid controller --- --- ---
 
-float __kp = 20.0;
-float __ki = 1000.0;
-float __kd = 0;
-float windup_limits = 255;
+float __kp = 30.0;
+float __ki = 800.0;
+float __kd = 8.0;
+float windup_limits = 120;
 
 //  --- --- --- ugv base --- --- ---
 
@@ -331,6 +331,8 @@ float windup_limits = 255;
 float WHEEL_D = 0.0800;
 int ONE_CIRCLE_PLUSES = 660;
 float TRACK_WIDTH = 0.172;
+// real physical track for 6 wheel UGV will not work
+float effective_track_width = TRACK_WIDTH * 2.0;
 bool SET_MOTOR_DIR = false;
 
 #define IO4_PIN 4

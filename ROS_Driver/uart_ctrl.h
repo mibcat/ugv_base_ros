@@ -1,6 +1,17 @@
 void jsonCmdReceiveHandler() {
   int cmdType = jsonCmdReceive["T"].as<int>();
   switch (cmdType) {
+    // handle effective track width
+    // {"T":90,"w":0.200}
+    case CMD_SET_EFFECTIVE_TRACK_WIDTH:
+      if (jsonCmdReceive.containsKey("w") && jsonCmdReceive["w"].is<float>()) {
+        setTrackWidth(jsonCmdReceive["w"].as<float>());
+      }
+      break;
+    case CMD_GET_EFFECTIVE_TRACK_WIDTH:
+      getTrackWidth();
+      break;
+
     // emergency stop.
     case CMD_EMERGENCY_STOP:
 #if ENABLE_ROARM

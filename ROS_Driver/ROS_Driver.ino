@@ -99,11 +99,12 @@ void moduleType_RoArmM2() {
 
 void setup() {
   // setup serial
-  Serial.setTxBufferSize(512);
+  auto new_size = Serial.setTxBufferSize(512);
   Serial.begin(115200);
   while (!Serial) {
   }
-
+  Serial.println("Serial started with Tx buffer size: " + String(new_size));
+  
   // setup i2c for IMU
   Wire.begin(S_SDA, S_SCL, 400000);
 
