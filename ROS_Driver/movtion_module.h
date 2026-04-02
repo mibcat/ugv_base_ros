@@ -209,20 +209,36 @@ float setpointBBuffer;
 //    to automatic, so we need to set the mode to manual before calling Start()
 //    which is changing the mode back to automatic.
 
-void pidControllerInit() {
-  outputA = 0.0;
-  setpointA = 0.0;
-  pidA.SetMode(PID::Manual);
-  pidA.Start(speedGetA, outputA, setpointA);
-  pidA.SetOutputLimits(-255, 255);
-  pidA.SetMode(PID::Automatic);
-
-  outputB = 0.0;
-  setpointB = 0.0;
-  pidB.SetMode(PID::Manual);
-  pidB.Start(speedGetB, outputB, setpointB);
-  pidB.SetOutputLimits(-255, 255);
-  pidB.SetMode(PID::Automatic);
+/**
+ * @brief Initialize the PID controllers.
+ *
+ * This function initializes the PID controllers for the left and right wheels.
+ * It resets the output and setpoint values, sets the PID mode to manual,
+ * starts the PID controllers, sets the output limits, and then switches the
+ * mode back to automatic.
+ *
+ * @param select Bitmask to select which PID controllers to initialize.
+ *               0x01 - Initialize left wheel PID
+ *               0x02 - Initialize right wheel PID
+ *               0x03 - Initialize both PID controllers
+ */
+void pidControllerInit(uint8_t select = 0x03) {
+  if (select & 0x01) {
+    outputA = 0.0;
+    setpointA = 0.0;
+    pidA.SetMode(PID::Manual);
+    pidA.Start(speedGetA, outputA, setpointA);
+    pidA.SetOutputLimits(-255, 255);
+    pidA.SetMode(PID::Automatic);
+  }
+  if (select & 0x02) {
+    outputB = 0.0;
+    setpointB = 0.0;
+    pidB.SetMode(PID::Manual);
+    pidB.Start(speedGetB, outputB, setpointB);
+    pidB.SetOutputLimits(-255, 255);
+    pidB.SetMode(PID::Automatic);
+  }
 }
 
 void leftCtrl(float pwmInputA) {
@@ -311,17 +327,17 @@ void PidControllerCompute() {
 
   // Left wheel
   outputA = pidA.Run(speedGetA);
-  // prevent motor creep
-  if (setpointA == 0 && speedGetA == 0) {
-    outputA = 0;
+  // prevent motor creep - stop immediately when setpoint is near zero
+  if ((abs(setpointA) <= 0.01) && abs(speedGetA) <= 0.1) {
+    pidControllerInit(0x01);
   }
   leftCtrl(outputA);
 
   // Right wheel
   outputB = pidB.Run(speedGetB);
-  // prevent motor creep
-  if (setpointB == 0 && speedGetB == 0) {
-    outputB = 0;
+  // prevent motor creep - stop immediately when setpoint is near zero
+  if ((abs(setpointB) <= 0.01) && abs(speedGetB) <= 0.1) {
+    pidControllerInit(0x02);
   }
   rightCtrl(outputB);
 }
