@@ -546,3 +546,15 @@ void getTrackWidth() {
   serializeJson(jsonInfoHttp, getInfoJsonString);
   Serial.println(getInfoJsonString);
 }
+
+void getPID() {
+  jsonInfoHttp.clear();
+  jsonInfoHttp["T"] = CMD_GET_MOTOR_PID;
+  jsonInfoHttp["P"] = __kp;
+  jsonInfoHttp["I"] = __ki;
+  jsonInfoHttp["D"] = __kd;
+  jsonInfoHttp["L"] = windup_limits;
+  String getInfoJsonString;
+  serializeJson(jsonInfoHttp, getInfoJsonString);
+  Serial.println(getInfoJsonString);
+}

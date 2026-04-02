@@ -17,6 +17,7 @@ Complete overview of all T (command type) commands used in the UGV ROS Driver pr
 | 11  | CMD_PWM_INPUT                 | PWM input control (±255)                                 |
 | 13  | CMD_ROS_CTRL                  | ROS control (X velocity, Z angular velocity)             |
 | 2   | CMD_SET_MOTOR_PID             | Motor PID & windup limits configuration                  |
+| 92  | CMD_GET_MOTOR_PID             | Get current motor PID parameters                         |
 | 3   | CMD_OLED_CTRL                 | OLED display control                                     |
 | -3  | CMD_OLED_DEFAULT              | OLED default display                                     |
 | 4   | CMD_MODULE_TYPE               | Module type settings (0=nothing, 1=RoArm-M2-S, 2=Gimbal) |
@@ -209,6 +210,7 @@ Complete overview of all T (command type) commands used in the UGV ROS Driver pr
 | 13   | CMD_ROS_CTRL                     | UGV Base Control        | `{"T":13,"X":0.1,"Z":0.3}`                                                          |
 | 90   | CMD_SET_EFFECTIVE_TRACK_WIDTH    | UGV Base Control        | `{"T":90,"w":0.200}`                                                                |
 | 91   | CMD_GET_EFFECTIVE_TRACK_WIDTH    | UGV Base Control        | `{"T":91}`                                                                          |
+| 92   | CMD_GET_MOTOR_PID                | UGV Base Control        | `{"T":92}`                                                                          |
 | 100  | CMD_MOVE_INIT                    | Arm Control - Basic     | `{"T":100}`                                                                         |
 | 101  | CMD_SINGLE_JOINT_CTRL            | Arm Control - Basic     | `{"T":101,"joint":0,"rad":0,"spd":0,"acc":10}`                                      |
 | 102  | CMD_JOINTS_RAD_CTRL              | Arm Control - Basic     | `{"T":102,"base":0,"shoulder":0,"elbow":1.57,"hand":1.57,"spd":0,"acc":10}`         |

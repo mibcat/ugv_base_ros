@@ -1,10 +1,27 @@
+template <typename T>
+bool check_json_key(const JsonDocument& doc, const char* key) {
+  if (!doc.containsKey(key)) {
+    if (InfoPrint == 1) {
+      Serial.printf("JSON key missing: %s\n", key);
+    }
+    return false;
+  }
+  if (!doc[key].is<T>()) {
+    if (InfoPrint == 1) {
+      Serial.printf("JSON key type mismatch: %s\n", key);
+    }
+    return false;
+  }
+  return true;
+}
+
 void jsonCmdReceiveHandler() {
   int cmdType = jsonCmdReceive["T"].as<int>();
   switch (cmdType) {
     // handle effective track width
     // {"T":90,"w":0.200}
     case CMD_SET_EFFECTIVE_TRACK_WIDTH:
-      if (jsonCmdReceive.containsKey("w") && jsonCmdReceive["w"].is<float>()) {
+      if (check_json_key<float>(jsonCmdReceive, "w")) {
         setTrackWidth(jsonCmdReceive["w"].as<float>());
       }
       break;
@@ -23,42 +40,58 @@ void jsonCmdReceiveHandler() {
       resetMotionEmergencyStop();
       break;
     case CMD_SPEED_CTRL:
-      if (jsonCmdReceive.containsKey("T") && jsonCmdReceive.containsKey("L") &&
-          jsonCmdReceive.containsKey("R")) {
-        if (jsonCmdReceive["L"].is<float>() &&
-            jsonCmdReceive["R"].is<float>()) {
-          // PID control for direct speed control of left and right wheels
-          if (updateMotionControlFlags(true)) {
-            setGoalSpeed(jsonCmdReceive["L"], jsonCmdReceive["R"]);
-          }
+      if (check_json_key<float>(jsonCmdReceive, "L") &&
+          check_json_key<float>(jsonCmdReceive, "R")) {
+        // PID control for direct speed control of left and right wheels
+        if (updateMotionControlFlags(true)) {
+          setGoalSpeed(jsonCmdReceive["L"], jsonCmdReceive["R"]);
         }
       }
       break;
     case CMD_PWM_INPUT:
-      // no PID control with direct PWM input for left and right wheels
-      if (updateMotionControlFlags(false)) {
-        leftCtrl(jsonCmdReceive["L"]);
-        rightCtrl(jsonCmdReceive["R"]);
+      if (check_json_key<float>(jsonCmdReceive, "L") &&
+          check_json_key<float>(jsonCmdReceive, "R")) {
+        // direct PWM control of left and right wheels without PID
+        if (updateMotionControlFlags(false)) {
+          leftCtrl(jsonCmdReceive["L"]);
+          rightCtrl(jsonCmdReceive["R"]);
+        }
       }
       break;
     case CMD_ROS_CTRL:
-      // PID control with ROS control with kinematic commands
-      if (updateMotionControlFlags(true)) {  // PID mode
-        rosCtrl(jsonCmdReceive["X"], jsonCmdReceive["Z"]);
+      if (check_json_key<float>(jsonCmdReceive, "X") &&
+          check_json_key<float>(jsonCmdReceive, "Z")) {
+        // PID control with ROS control with kinematic commands
+        if (updateMotionControlFlags(true)) {  // PID mode
+          rosCtrl(jsonCmdReceive["X"], jsonCmdReceive["Z"]);
+        }
       }
       break;
     case CMD_SET_MOTOR_PID:
-      setPID(jsonCmdReceive["P"], jsonCmdReceive["I"], jsonCmdReceive["D"],
-             jsonCmdReceive["L"]);
+      if (check_json_key<float>(jsonCmdReceive, "P") &&
+          check_json_key<float>(jsonCmdReceive, "I") &&
+          check_json_key<float>(jsonCmdReceive, "D") &&
+          check_json_key<float>(jsonCmdReceive, "L")) {
+        setPID(jsonCmdReceive["P"], jsonCmdReceive["I"], jsonCmdReceive["D"],
+               jsonCmdReceive["L"]);
+      }
+      break;
+    case CMD_GET_MOTOR_PID:
+      getPID();
       break;
     case CMD_OLED_CTRL:
-      oledCtrl(jsonCmdReceive["lineNum"], jsonCmdReceive["Text"]);
+      if (check_json_key<int>(jsonCmdReceive, "lineNum") &&
+          check_json_key<String>(jsonCmdReceive, "Text")) {
+        oledCtrl(jsonCmdReceive["lineNum"], jsonCmdReceive["Text"]);
+      }
       break;
     case CMD_OLED_DEFAULT:
       setOledDefault();
       break;
     case CMD_MODULE_TYPE:
-      changeModuleType(jsonCmdReceive["cmd"]);
+      if (check_json_key<int>(jsonCmdReceive, "cmd")) {
+        changeModuleType(jsonCmdReceive["cmd"]);
+      }
       break;
 
     case CMD_GET_IMU_DATA:
@@ -71,22 +104,38 @@ void jsonCmdReceiveHandler() {
       getIMUOffset();
       break;
     case CMD_SET_IMU_OFFSET:
-      setIMUOffset(
-          jsonCmdReceive["gx"], jsonCmdReceive["gy"], jsonCmdReceive["gz"],
-          jsonCmdReceive["ax"], jsonCmdReceive["ay"], jsonCmdReceive["az"],
-          jsonCmdReceive["cx"], jsonCmdReceive["cy"], jsonCmdReceive["cz"]);
+      if (check_json_key<float>(jsonCmdReceive, "gx") &&
+          check_json_key<float>(jsonCmdReceive, "gy") &&
+          check_json_key<float>(jsonCmdReceive, "gz") &&
+          check_json_key<float>(jsonCmdReceive, "ax") &&
+          check_json_key<float>(jsonCmdReceive, "ay") &&
+          check_json_key<float>(jsonCmdReceive, "az") &&
+          check_json_key<float>(jsonCmdReceive, "cx") &&
+          check_json_key<float>(jsonCmdReceive, "cy") &&
+          check_json_key<float>(jsonCmdReceive, "cz")) {
+        setIMUOffset(
+            jsonCmdReceive["gx"], jsonCmdReceive["gy"], jsonCmdReceive["gz"],
+            jsonCmdReceive["ax"], jsonCmdReceive["ay"], jsonCmdReceive["az"],
+            jsonCmdReceive["cx"], jsonCmdReceive["cy"], jsonCmdReceive["cz"]);
+      }
       break;
     case CMD_BASE_FEEDBACK:
       baseInfoFeedback();
       break;
     case CMD_BASE_FEEDBACK_FLOW:
-      setBaseInfoFeedbackMode(jsonCmdReceive["cmd"]);
+      if (check_json_key<int>(jsonCmdReceive, "cmd")) {
+        setBaseInfoFeedbackMode(jsonCmdReceive["cmd"]);
+      }
       break;
     case CMD_FEEDBACK_FLOW_INTERVAL:
-      setFeedbackFlowInterval(jsonCmdReceive["cmd"]);
+      if (check_json_key<int>(jsonCmdReceive, "cmd")) {
+        setFeedbackFlowInterval(jsonCmdReceive["cmd"]);
+      }
       break;
     case CMD_UART_ECHO_MODE:
-      setCmdEcho(jsonCmdReceive["cmd"]);
+      if (check_json_key<int>(jsonCmdReceive, "cmd")) {
+        setCmdEcho(jsonCmdReceive["cmd"]);
+      }
       break;
 #if ENABLE_ROARM
     case CMD_ARM_CTRL_UI:
@@ -96,7 +145,10 @@ void jsonCmdReceiveHandler() {
 #endif
 
     case CMD_LED_CTRL:
-      led_pwm_ctrl(jsonCmdReceive["IO4"], jsonCmdReceive["IO5"]);
+      if (check_json_key<int>(jsonCmdReceive, "IO4") &&
+          check_json_key<int>(jsonCmdReceive, "IO5")) {
+        led_pwm_ctrl(jsonCmdReceive["IO4"], jsonCmdReceive["IO5"]);
+      }
       break;
 #if ENABLE_GIMBAL
     case CMD_GIMBAL_CTRL_SIMPLE:
@@ -119,10 +171,15 @@ void jsonCmdReceiveHandler() {
       break;
 #endif
     case CMD_HEART_BEAT_SET:
-      changeHeartBeatDelay(jsonCmdReceive["cmd"]);
+      if (check_json_key<int>(jsonCmdReceive, "cmd")) {
+        changeHeartBeatDelay(jsonCmdReceive["cmd"]);
+      }
       break;
     case CMD_SET_SPD_RATE:
-      setSpdRate(jsonCmdReceive["L"], jsonCmdReceive["R"]);
+      if (check_json_key<int>(jsonCmdReceive, "L") &&
+          check_json_key<int>(jsonCmdReceive, "R")) {
+        setSpdRate(jsonCmdReceive["L"], jsonCmdReceive["R"]);
+      }
       break;
     case CMD_GET_SPD_RATE:
       getSpdRate();
@@ -133,11 +190,17 @@ void jsonCmdReceiveHandler() {
 
     // EoAT type settings.
     case CMD_EOAT_TYPE:
-      configEEmodeType(jsonCmdReceive["mode"]);
+      if (check_json_key<int>(jsonCmdReceive, "mode")) {
+        configEEmodeType(jsonCmdReceive["mode"]);
+      }
       break;
     case CMD_CONFIG_EOAT:
-      configEoAT(jsonCmdReceive["pos"], jsonCmdReceive["ea"],
-                 jsonCmdReceive["eb"]);
+      if (check_json_key<int>(jsonCmdReceive, "pos") &&
+          check_json_key<int>(jsonCmdReceive, "ea") &&
+          check_json_key<int>(jsonCmdReceive, "eb")) {
+        configEoAT(jsonCmdReceive["pos"], jsonCmdReceive["ea"],
+                   jsonCmdReceive["eb"]);
+      }
       break;
 
 #if ENABLE_ROARM
@@ -414,8 +477,12 @@ void jsonCmdReceiveHandler() {
 
     // mainType & moduleType settings.
     case CMD_MM_TYPE_SET:
-      mm_settings(jsonCmdReceive["main"], jsonCmdReceive["module"]);
-      saveMainTypeModuleTpye(jsonCmdReceive["main"], jsonCmdReceive["module"]);
+      if (check_json_key<int>(jsonCmdReceive, "main") &&
+          check_json_key<int>(jsonCmdReceive, "module")) {
+        mm_settings(jsonCmdReceive["main"], jsonCmdReceive["module"]);
+        saveMainTypeModuleTpye(jsonCmdReceive["main"],
+                               jsonCmdReceive["module"]);
+      }
       break;
   }
 }
