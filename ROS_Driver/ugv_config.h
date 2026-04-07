@@ -52,6 +52,28 @@ bool baseFeedbackFlow = 0;
 
 String thisMacStr;
 
+// Instantiate a servo control object.
+SMS_STS st;
+
+// Used to store the feedback information from the servo.
+struct ServoFeedback {
+  bool status;
+  int pos;
+  int speed;
+  int load;
+  float voltage;
+  float current;
+  float temper;
+  byte mode;
+};
+
+ServoFeedback servoFeedback[5];
+// [0] BASE_SERVO_ID
+// [1] SHOULDER_DRIVING_SERVO_ID
+// [2] SHOULDER_DRIVEN_SERVO_ID
+// [3] ELBOW_SERVO_ID
+// [4] GRIPPER_SERVO_ID
+
 #define BASE_JOINT 1
 #define SHOULDER_JOINT 2
 #define ELBOW_JOINT 3

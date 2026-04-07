@@ -81,6 +81,7 @@ void moduleType_RoArmM2() {
 
   RoArmM2_getPosByServoFeedback();
 
+#if ENABLE_WIRELESS
   // esp-now flow ctrl as a flow-leader.
   switch (espNowMode) {
     case 1:
@@ -90,6 +91,7 @@ void moduleType_RoArmM2() {
       espNowSingleDevFlowCtrl();
       break;
   }
+#endif
 
   if (InfoPrint == 2) {
     RoArmM2_infoFeedback();
@@ -104,7 +106,7 @@ void setup() {
   while (!Serial) {
   }
   Serial.println("Serial started with Tx buffer size: " + String(new_size));
-  
+
   // setup i2c for IMU
   Wire.begin(S_SDA, S_SCL, 400000);
 
@@ -146,23 +148,17 @@ void setup() {
   }
   movtionPinInit();
 
-  // servos power up
-  screenLine_1 = "Pwr servos";
+#if (ENABLE_ROARM || ENABLE_GIMBAL)
+  // init servo ctrl functions (shared by RoArm and Gimbal)
+  screenLine_1 = "servos";
   oled_update();
   if (InfoPrint == 1) {
-    Serial.println("Power up the servos.");
+    Serial.println("Initialize servos.");
   }
-  delay(500);
+  servoInit();
+#endif
 
 #if ENABLE_ROARM
-  // init servo ctrl functions.
-  screenLine_1 = "servo ctrl";
-  oled_update();
-  if (InfoPrint == 1) {
-    Serial.println("ServoCtrl init UART2TTL...");
-  }
-  RoArmM2_servoInit();
-
   // check the status of the servos.
   screenLine_1 = "servo stat";
   oled_update();

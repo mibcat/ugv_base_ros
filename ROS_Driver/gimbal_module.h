@@ -1,3 +1,6 @@
+// forward declaration of servoTorqueCtrl()
+extern void servoTorqueCtrl(byte servoID, u8 enableCMD);
+
 u8 gimbalID[2] = {GIMBAL_PAN_ID, GIMBAL_TILT_ID};
 
 s16 gimbalPos[2];
@@ -90,7 +93,7 @@ void getGimbalFeedback() {
     gimbalFeedback[0].temper = st.ReadTemper(-1);
     gimbalFeedback[0].mode = st.ReadMode(GIMBAL_PAN_ID);
   } else {
-    servoFeedback[0].status = false;
+    gimbalFeedback[0].status = false;
     if (InfoPrint == 1) {
       jsonInfoHttp.clear();
       jsonInfoHttp["T"] = 1005;
@@ -112,7 +115,7 @@ void getGimbalFeedback() {
     gimbalFeedback[1].temper = st.ReadTemper(-1);
     gimbalFeedback[1].mode = st.ReadMode(GIMBAL_TILT_ID);
   } else {
-    servoFeedback[1].status = false;
+    gimbalFeedback[1].status = false;
     if (InfoPrint == 1) {
       jsonInfoHttp.clear();
       jsonInfoHttp["T"] = 1005;

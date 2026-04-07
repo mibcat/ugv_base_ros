@@ -1,29 +1,7 @@
 #define ANG2DEG 0.017453292
 
-// Instantiate a servo control object.
-SMS_STS st;
-
-// place holder.
-void serialCtrl();
-
-// Used to store the feedback information from the servo.
-struct ServoFeedback {
-  bool status;
-  int pos;
-  int speed;
-  int load;
-  float voltage;
-  float current;
-  float temper;
-  byte mode;
-};
-
-ServoFeedback servoFeedback[5];
-// [0] BASE_SERVO_ID
-// [1] SHOULDER_DRIVING_SERVO_ID
-// [2] SHOULDER_DRIVEN_SERVO_ID
-// [3] ELBOW_SERVO_ID
-// [4] GRIPPER_SERVO_ID
+// forward declaration of servoTorqueCtrl()
+extern void servoTorqueCtrl(byte servoID, u8 enableCMD);
 
 // input the angle in radians, and it returns the number of servo steps.
 double calculatePosByRad(double radInput) {
@@ -131,13 +109,6 @@ void changeID(byte oldID, byte newID) {
   }
 }
 
-// ctrl the torque lock of a servo.
-// input the servo ID and command: 1-on : produce torque.
-//                                 0-off: release torque.
-void servoTorqueCtrl(byte servoID, u8 enableCMD) {
-  st.EnableTorque(servoID, enableCMD);
-}
-
 // set the current position as the middle position of the servo.
 // input the ID of the servo that you wannna set middle position.
 void setMiddlePos(byte InputID) { st.CalibrationOfs(InputID); }
@@ -156,17 +127,6 @@ void waitMove2Goal(byte InputID, s16 goalPosition, s16 offSet) {
     }
     getFeedback(InputID, true);
     delay(10);
-  }
-}
-
-// initialize bus servo libraris and uart2ttl.
-void RoArmM2_servoInit() {
-  Serial1.begin(1000000, SERIAL_8N1, S_RXD, S_TXD);
-  st.pSerial = &Serial1;
-  while (!Serial1) {
-  }
-  if (InfoPrint == 1) {
-    Serial.println("ServoCtrl init succeed.");
   }
 }
 

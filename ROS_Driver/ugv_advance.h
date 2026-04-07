@@ -357,6 +357,24 @@ void configEoAT(byte mountPos, double inputEA, double inputEB) {
   initT = M_PI;
 }
 
+// initialize servo UART communication (shared by RoArm and Gimbal).
+void servoInit() {
+  Serial1.begin(1000000, SERIAL_8N1, S_RXD, S_TXD);
+  st.pSerial = &Serial1;
+  while (!Serial1) {
+  }
+  if (InfoPrint == 1) {
+    Serial.println("ServoCtrl init succeed.");
+  }
+}
+
+// ctrl the torque lock of a servo.
+// input the servo ID and command: 1-on : produce torque.
+//                                 0-off: release torque.
+void servoTorqueCtrl(byte servoID, u8 enableCMD) {
+  st.EnableTorque(servoID, enableCMD);
+}
+
 // set the InfoPrint.
 void configInfoPrint(byte inputCmd) {
   switch (inputCmd) {
@@ -444,27 +462,12 @@ void baseInfoFeedback() {
           servoFeedback[SHOULDER_DRIVEN_SERVO_ID - 11].load;
       jsonInfoHttp["torE"] = servoFeedback[ELBOW_SERVO_ID - 11].load;
       jsonInfoHttp["torH"] = servoFeedback[GRIPPER_SERVO_ID - 11].load;
-#else
-      jsonInfoHttp["ax"] = NAN;
-      jsonInfoHttp["ay"] = NAN;
-      jsonInfoHttp["az"] = NAN;
-      jsonInfoHttp["ab"] = NAN;
-      jsonInfoHttp["as"] = NAN;
-      jsonInfoHttp["ae"] = NAN;
-      jsonInfoHttp["at"] = NAN;
-      jsonInfoHttp["torB"] = 0;
-      jsonInfoHttp["torS"] = 0;
-      jsonInfoHttp["torE"] = 0;
-      jsonInfoHttp["torH"] = 0;
 #endif
       break;
     case 2:
 #if ENABLE_GIMBAL
       jsonInfoHttp["pan"] = panAngleCompute(gimbalFeedback[0].pos);
       jsonInfoHttp["tilt"] = tiltAngleCompute(gimbalFeedback[1].pos);
-#else
-      jsonInfoHttp["pan"] = NAN;
-      jsonInfoHttp["tilt"] = NAN;
 #endif
       break;
   }
