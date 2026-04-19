@@ -58,7 +58,9 @@ StaticJsonDocument<1024> jsonInfoHttp;
 #if ENABLE_WIRELESS
 // functions for wifi ctrl.
 #include "wifi_ctrl.h"
+#endif
 
+#if ENABLE_ESPNOW
 // functions for esp-now.
 #include "esp_now_ctrl.h"
 #endif
@@ -81,7 +83,7 @@ void moduleType_RoArmM2() {
 
   RoArmM2_getPosByServoFeedback();
 
-#if ENABLE_WIRELESS
+#if ENABLE_ESPNOW
   // esp-now flow ctrl as a flow-leader.
   switch (espNowMode) {
     case 1:
@@ -211,7 +213,7 @@ void setup() {
   initHttpWebServer();
 #endif
 
-#if ENABLE_WIRELESS
+#if ENABLE_ESPNOW
   screenLine_1 = "ESP-NOW";
   oled_update();
   if (InfoPrint == 1) {

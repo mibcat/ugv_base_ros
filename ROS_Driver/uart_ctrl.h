@@ -378,7 +378,7 @@ void jsonCmdReceiveHandler() {
       missionPlay(jsonCmdReceive["name"], jsonCmdReceive["times"]);
       break;
 
-#if ENABLE_WIRELESS
+#if ENABLE_ESPNOW
       // esp-now settings.
     case CMD_BROADCAST_FOLLOWER:
       changeBroadcastMode(jsonCmdReceive["mode"], jsonCmdReceive["mac"]);
@@ -407,7 +407,9 @@ void jsonCmdReceiveHandler() {
                           jsonCmdReceive["e"], jsonCmdReceive["h"],
                           jsonCmdReceive["cmd"], jsonCmdReceive["megs"]);
       break;
+#endif
 
+#if ENABLE_WIRELESS
     // wifi settings.
     case CMD_WIFI_ON_BOOT:
       configWifiModeOnBoot(jsonCmdReceive["cmd"]);
