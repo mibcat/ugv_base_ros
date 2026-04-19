@@ -49,12 +49,18 @@ Simply run the **PlatformIO:Build** task.
 | ENABLE_ESPNOW      | 0       | support ESP now, needs ENABLE_WIRELESS=1     | 14.8 kB    |
 | ENABLE_GIMBAL      | 0       | support gimbal                               | 20.3 kB    |
 | ENABLE_HTTP_SERVER | 0       | support http server, needs ENABLE_WIRELESS=1 | 92.5 kB    |
+| ENABLE_OTA         | 1       | support Over The Air update                  | 50.6 kB    |
 | ENABLE_ROARM       | 0       | support RoArm                                | 2.9 kB     |
-| ENABLE_WIRELESS    | 0       | support Wifi                                 | 10.1 kB    |
+| ENABLE_WIRELESS    | 1       | support Wifi                                 | 10.1 kB    |
 
 ### Upload firmware to target
 
-Connect develop machine to the Rover via USB-C cable (marked with USB on the board) - than run the **PlatformIO:Upload** task.
+This project provided two development environments
+
+1. connection via USB to serial converter (needs USB cable connection to your development PC)
+2. Over the Air update (needs settings ENABLE_WIRELESS=1 AND ENABLE_OTA=1)
+
+Select the desired environment via **PlatformIO:Pick Project Environment** and run the **PlatformIO:Upload** task.
 
 ### Basic Use
 

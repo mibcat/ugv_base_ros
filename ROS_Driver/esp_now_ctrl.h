@@ -17,28 +17,7 @@ esp_now_peer_info_t peerInfo;
 #define ESP_NOW_CHANNEL 0
 #define ESP_NOW_ENCRYPT false
 
-uint8_t thisDevMac[6];
 uint8_t singleFollowerDev[6];
-
-// input a mac[6]:{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}
-// return String: "FF:FF:FF:FF:FF:FF"
-String macToString(uint8_t mac[6]) {
-  char macStr[18];  // 6 pairs of 2 characters + null terminator
-  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],
-           mac[1], mac[2], mac[3], mac[4], mac[5]);
-  return String(macStr);
-}
-
-void getThisDevMacAddress() {
-  WiFi.macAddress(thisDevMac);
-
-  thisMacStr = macToString(thisDevMac);
-
-  jsonInfoHttp.clear();
-  jsonInfoHttp["mac"] = thisMacStr;
-
-  Serial.println(thisMacStr);
-}
 
 void changeEspNowMode(byte inputMode) {
   switch (inputMode) {
@@ -195,7 +174,7 @@ void initEspNow() {
   Serial.println("kgm-debug2: set send callback");
   // register esp-now sending call back function.
   esp_now_register_send_cb(OnDataSent);
-  
+
   Serial.println("kgm-debug3: set send callback");
   // register esp-now receiving call back function.
   esp_now_register_recv_cb(OnDataRecv);

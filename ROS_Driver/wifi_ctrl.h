@@ -22,7 +22,7 @@ const char* ap_ssid = "UGV";
 const char* ap_password = "12345678";
 
 // true: change the WIFI_MODE_ON_BOOT to 3 when first STA mode succeed.
-bool defaultModeToAPSTA = true;
+bool defaultModeToAPSTA = false;
 
 // wifiConfig.yaml example:
 // wifi_mode_on_boot:3
@@ -39,6 +39,30 @@ byte WIFI_CURRENT_MODE = -1;
 IPAddress localIP;
 DynamicJsonDocument wifiDoc(256);
 bool wifiConfigFound = false;
+
+// buffer for mac address as array
+uint8_t thisDevMac[6];
+
+// input a mac[6]:{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}
+// return String: "FF:FF:FF:FF:FF:FF"
+String macToString(uint8_t mac[6]) {
+  char macStr[18];  // 6 pairs of 2 characters + null terminator
+  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", mac[0],
+           mac[1], mac[2], mac[3], mac[4], mac[5]);
+  return String(macStr);
+}
+
+void getThisDevMacAddress() {
+  // get mac address as array.
+  WiFi.macAddress(thisDevMac);
+  // convert mac address to String.
+  thisMacStr = macToString(thisDevMac);
+
+  jsonInfoHttp.clear();
+  jsonInfoHttp["T"] = CMD_GET_MAC_ADDRESS;
+  jsonInfoHttp["mac"] = thisMacStr;
+  Serial.println(thisMacStr);
+}
 
 // load the wifiConfig.json form Flash.
 // the file name is wifiConfig.json in root path.
@@ -101,7 +125,7 @@ IPAddress getIPAddress(byte inputMode) {
 // create a wifiConfig.json file
 // from the args already be using.
 bool createWifiConfigFileByStatus() {
-  if (WIFI_MODE_ON_BOOT != 0 || WIFI_MODE_ON_BOOT != -1) {
+  if (WIFI_MODE_ON_BOOT >= 1 && WIFI_MODE_ON_BOOT <= 3) {
     wifiDoc.clear();
     wifiDoc["wifi_mode_on_boot"] = WIFI_MODE_ON_BOOT;
     wifiDoc["sta_ssid"] = sta_ssid;
@@ -142,8 +166,7 @@ bool wifiModeAP(const char* input_ssid, const char* input_password) {
   if (InfoPrint == 1) {
     Serial.println("wifi mode on boot: AP");
   }
-  // WiFi.mode(WIFI_AP);
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_AP);
   WiFi.softAP(input_ssid, input_password);
   if (InfoPrint == 1) {
     Serial.println("AP mode starts...");
@@ -172,8 +195,7 @@ bool wifiModeSTA(const char* input_ssid, const char* input_password) {
   if (InfoPrint == 1) {
     Serial.println("wifi mode on boot: STA");
   }
-  // WiFi.mode(WIFI_STA);
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_STA);
   WiFi.begin(input_ssid, input_password);
   connectionStartTime = millis();
 
@@ -313,7 +335,7 @@ bool wifiModeAPSTA(const char* input_ap_ssid, const char* input_ap_password,
 void wifiStop() {
   WiFi.disconnect();
   WIFI_CURRENT_MODE = 0;
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_OFF);
 }
 
 // wifi mode on boot starts.
@@ -326,7 +348,7 @@ bool wifiModeOnBoot() {
       }
       funcStatus = true;
       WIFI_CURRENT_MODE = 0;
-      WiFi.mode(WIFI_AP_STA);
+      WiFi.mode(WIFI_OFF);
       break;
     case 1:
       funcStatus = wifiModeAP(ap_ssid, ap_password);
@@ -336,6 +358,13 @@ bool wifiModeOnBoot() {
       break;
     case 3:
       funcStatus = wifiModeAPSTA(ap_ssid, ap_password, sta_ssid, sta_password);
+      break;
+    default:
+      if (InfoPrint == 1) {
+        Serial.print("wifi mode on boot: invalid mode ");
+        Serial.println(WIFI_MODE_ON_BOOT);
+      }
+      funcStatus = false;
       break;
   }
   return funcStatus;
@@ -370,9 +399,9 @@ void createWifiConfigFileByInput(byte inputMode, const char* inputApSsid,
 void wifiStatusFeedback() {
   wifiDoc["ip"] = localIP.toString();
   wifiDoc["rssi"] = WiFi.RSSI();
-  serializeJson(wifiDoc, Serial);
 
   jsonInfoHttp.clear();
+  jsonInfoHttp["T"] = CMD_WIFI_INFO;
   jsonInfoHttp["ip"] = wifiDoc["ip"];
   jsonInfoHttp["rssi"] = wifiDoc["rssi"];
   jsonInfoHttp["wifi_mode_on_boot"] = WIFI_MODE_ON_BOOT;
@@ -381,6 +410,10 @@ void wifiStatusFeedback() {
   jsonInfoHttp["ap_ssid"] = ap_ssid;
   jsonInfoHttp["ap_password"] = ap_password;
   jsonInfoHttp["mac"] = thisMacStr;
+
+  String getInfoJsonString;
+  serializeJson(jsonInfoHttp, getInfoJsonString);
+  Serial.println(getInfoJsonString);
 }
 
 // wifi init.

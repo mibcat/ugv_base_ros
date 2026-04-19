@@ -60,6 +60,10 @@ StaticJsonDocument<1024> jsonInfoHttp;
 #include "wifi_ctrl.h"
 #endif
 
+#if ENABLE_OTA
+#include "ArduinoOTA.h"
+#endif
+
 #if ENABLE_ESPNOW
 // functions for esp-now.
 #include "esp_now_ctrl.h"
@@ -142,6 +146,16 @@ void setup() {
   }
   initFS();
 
+#if ENABLE_WIRELESS
+  screenLine_1 = "WiFi";
+  oled_update();
+  if (InfoPrint == 1) {
+    Serial.println("WiFi init");
+  }
+  initWifi();
+  getThisDevMacAddress();
+#endif
+
   // init the funcs in switch_module.h
   screenLine_1 = "12V-sw ctl";
   oled_update();
@@ -195,15 +209,6 @@ void setup() {
                             ST_TORQUE_MAX);
 #endif
 
-#if ENABLE_WIRELESS
-  screenLine_1 = "WiFi";
-  oled_update();
-  if (InfoPrint == 1) {
-    Serial.println("WiFi init.");
-  }
-  initWifi();
-#endif
-
 #if ENABLE_HTTP_SERVER
   screenLine_1 = "http & web";
   oled_update();
@@ -220,15 +225,56 @@ void setup() {
     Serial.println("ESP-NOW init.");
   }
   initEspNow();
+#endif
 
-  getThisDevMacAddress();
+#if ENABLE_OTA
+  if (InfoPrint == 1) {
+    Serial.println("OTA INIT");
+  }
+  ArduinoOTA
+      // set OTA hostname
+      .setHostname(OTA_HOST_NAME)
+
+      // callback function when OTA starts
+      .onStart([] {
+        // emergency stop when OTA starts to ensure safety during update
+        setMotionEmergencyStop();
+        // indicate OTA mode on OLED
+        screenLine_0 = "OTA update";
+        screenLine_1 = "..........";
+        oled_update();
+      })
+      // callback function for progress
+      .onProgress([](unsigned int progress, unsigned int total) {
+        static int lastStars = 0;
+        // current amount of 10%-blocks completed
+        int currentStars = (progress / (total / 10));
+
+        // only update OLED when a new block is completed
+        if (currentStars > lastStars) {
+          lastStars = currentStars;
+          // fill the line with stars to indicate progress (10% per star)
+          screenLine_1 = "";
+          for (int i = 0; i < currentStars; i++) {
+            screenLine_1 += "*";
+          }
+          oled_update();
+        }
+      })
+      // callback function when OTA ends
+      .onEnd([] {
+        screenLine_0 = "OTA done";
+        oled_update();
+      })
+      // initialize OTA with the settings above
+      .begin();
 #endif
 
   screenLine_0 = "UGV ready";
   screenLine_1 = "";
   oled_update();
   if (InfoPrint == 1) {
-    Serial.println("UGV started.");
+    Serial.println("UGV started");
   }
 
   initEncoders();
@@ -291,4 +337,9 @@ void loop() {
   }
 
   heartBeatCtrl();
+
+// check for new software updates via OTA
+#if ENABLE_OTA
+  ArduinoOTA.handle();
+#endif
 }
