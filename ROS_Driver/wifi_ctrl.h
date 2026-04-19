@@ -85,10 +85,6 @@ bool loadWifiConfig() {
     ap_ssid = wifiDoc["ap_ssid"];
     ap_password = wifiDoc["ap_password"];
 
-    if (InfoPrint == 1) {
-      Serial.println(line);
-    }
-
     wifiConfigYaml.close();
     wifiConfigFound = true;
     jsonInfoHttp.clear();
@@ -162,7 +158,9 @@ bool createWifiConfigFileByStatus() {
 
 // set wifi as AP mode.
 bool wifiModeAP(const char* input_ssid, const char* input_password) {
-  WiFi.disconnect();
+  if (WiFi.isConnected()) {
+    WiFi.disconnect();
+  }
   if (InfoPrint == 1) {
     Serial.println("wifi mode on boot: AP");
   }
@@ -191,7 +189,9 @@ bool wifiModeAP(const char* input_ssid, const char* input_password) {
 
 // set wifi as STA mode.
 bool wifiModeSTA(const char* input_ssid, const char* input_password) {
-  WiFi.disconnect();
+  if (WiFi.isConnected()) {
+    WiFi.disconnect();
+  }
   if (InfoPrint == 1) {
     Serial.println("wifi mode on boot: STA");
   }
@@ -258,7 +258,9 @@ bool wifiModeSTA(const char* input_ssid, const char* input_password) {
 // set wifi as AP+STA mode.
 bool wifiModeAPSTA(const char* input_ap_ssid, const char* input_ap_password,
                    const char* input_sta_ssid, const char* input_sta_password) {
-  WiFi.disconnect();
+  if (WiFi.isConnected()) {
+    WiFi.disconnect();
+  }
   if (InfoPrint == 1) {
     Serial.println("wifi mode on boot: AP+STA");
   }
