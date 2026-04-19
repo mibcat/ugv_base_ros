@@ -65,7 +65,7 @@ To ensure compatibility with various types of robots. You can configure the robo
 
 In this command, the s directive denotes a robot-type setting. The first digit, `2`, signifies that the main type of robot is a `UGV Rover`, with `1` representing `RaspRover` and `3` indicating `UGV Beast`. The second digit, `2`, specifies the module as `Camera PT`, where `0` denotes `Nothing` and `1` signifies `RoArm-M2`.
 
-Complete list of all commands: [T Commands Reference](T_COMMANDS_REFERENCE.md)
+Complete list of all commands: [T Commands Reference](docu/T_COMMANDS_REFERENCE.md)
 
 # License
 
